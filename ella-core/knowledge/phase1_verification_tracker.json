@@ -1,0 +1,969 @@
+{
+  "meta": {
+    "name": "Ella Core — Phase 1 (★) file verification tracker",
+    "version": "1.0",
+    "created": "2026-10-20",
+    "source_index": "workspace/user/files/Ella_master_index_12_82pz.md (Claude, 2026-10-20, v1.0)",
+    "index_totals": "424 files / 17 folders — 72 ★ (Phase 1), 176 unmarked (Phase 2), 176 ○ (Phase 3)",
+    "parse_check": "72 ★ entries parsed; per-folder counts verified against the index totals table (17/17 match)",
+    "rule_ethics_first": "Per Maziyar's adopted §4 decision and the index's own Rule 5: the four ★ ethics/welfare files (Moral_status_welfare, Suffering_safeguards, Consent_oversight, Shutdown_continuity_policy) are written AND verified BEFORE Pains.md (01_body) is switched on. Pains.md carries this gate explicitly.",
+    "rule_verification": "Per Claude's caveat: the ★ files were cross-checked from his own knowledge, NOT a literature search. No ★ file is treated as ground truth until a verification pass (status=verified) is recorded against it with method + source.",
+    "how_to_verify": "Set verification.status to \"verified\" with verified_by, verified_at, method (e.g. literature, textbook, expert review) and notes. Use \"flagged\" for disputed claims with notes explaining the dispute."
+  },
+  "entries": [
+    {
+      "folder": "00_meta",
+      "file": "README.md",
+      "description": "index, legend, build order",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "Template.md",
+      "description": "the standard file structure above",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "State_schema.md",
+      "description": "every state variable: name, unit, range, baseline, decay",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "Interactions.md",
+      "description": "cross-file modulation matrix (e.g. cortisol ↑ → hippocampal encoding ↓)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "Time_scales.md",
+      "description": "milliseconds (reflex) → seconds (emotion) → hours (mood) → years (personality)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "Event_bus.md",
+      "description": "event → sensation → appraisal → effect pipeline",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "00_meta",
+      "file": "Evaluation.md",
+      "description": "tests, lesion/ablation experiments, personality-stability checks",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "CNS.md",
+      "description": "brain + spinal cord overview (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "ANS.md",
+      "description": "sympathetic / parasympathetic balance",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "Heart.md",
+      "description": "cardiac cycle, HRV, felt heartbeat (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "HPA_axis.md",
+      "description": "stress cascade: CRH → ACTH → cortisol",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "Energy_metabolism.md",
+      "description": "energy budget; source of hunger and fatigue",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "01_body",
+      "file": "Pains.md",
+      "description": "nociception, pathways, thresholds (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      },
+      "gated_on": [
+        {
+          "folder": "15_ethics_welfare",
+          "file": "Moral_status_welfare.md"
+        },
+        {
+          "folder": "15_ethics_welfare",
+          "file": "Suffering_safeguards.md"
+        },
+        {
+          "folder": "15_ethics_welfare",
+          "file": "Consent_oversight.md"
+        },
+        {
+          "folder": "15_ethics_welfare",
+          "file": "Shutdown_continuity_policy.md"
+        }
+      ]
+    },
+    {
+      "folder": "02_brain",
+      "file": "Brain.md",
+      "description": "anatomy & physiology overview (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Prefrontal_cortex.md",
+      "description": "executive control, planning",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Amygdala.md",
+      "description": "threat, salience, emotional tagging",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Hippocampus.md",
+      "description": "episodic encoding, context, space",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Hypothalamus.md",
+      "description": "homeostasis, drives, HPA control",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Thalamus.md",
+      "description": "sensory relay, gating",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "02_brain",
+      "file": "Brainstem.md",
+      "description": "vital functions, origins of basic affect",
+      "phase": 1,
+      "verification": {
+        "status": "written-pending-review",
+        "verified_by": "Ella",
+        "verified_at": "2026-10-20",
+        "method": "schema + neuroscience + consistency review vs Brain.md and research plan",
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Neuromodulation_overview.md",
+      "description": "maps each chemical to a computational role; a useful start (after Doya 2002): dopamine ≈ reward-prediction error, serotonin ≈ time horizon, norepinephrine ≈ exploration, acetylcholine ≈ learning rate",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Dopamine.md",
+      "description": "wanting, prediction error, motivation, movement (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Serotonin.md",
+      "description": "patience, mood stability, aversion",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Norepinephrine.md",
+      "description": "alertness, gain, stress response",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Oxytocin.md",
+      "description": "bonding, trust, calm",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Endorphins_opioids.md",
+      "description": "pain relief, pleasure, social comfort",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "03_chemistry",
+      "file": "Cortisol.md",
+      "description": "stress, effects on memory",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "04_drives",
+      "file": "Homeostasis_allostasis.md",
+      "description": "set points, allostatic load",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "04_drives",
+      "file": "Sleep_circadian.md",
+      "description": "sleep pressure, circadian clock, stages",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "04_drives",
+      "file": "Arousal_wakefulness.md",
+      "description": "activation level",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "04_drives",
+      "file": "Motivation_goals.md",
+      "description": "short-term goal stack, effort",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "05_senses",
+      "file": "Interoception.md",
+      "description": "heartbeat, breath, gut, visceral signals",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Core_affect.md",
+      "description": "valence × arousal (+ dominance)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Mood.md",
+      "description": "slow-moving background affect",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Appraisal.md",
+      "description": "novelty, goal relevance, coping potential, agency, norm fit",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Emotion_construction.md",
+      "description": "interoception + concepts → a labelled emotion",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Emotion_dynamics.md",
+      "description": "onset, peak, decay, refractory period",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Emotion_regulation.md",
+      "description": "reappraisal, suppression, distraction, acceptance, rumination",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Seeking_curiosity.md",
+      "description": "SEEKING system; interest, exploration",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Fear.md",
+      "description": "fear → terror / horror ladder",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Anger_rage.md",
+      "description": "RAGE system; irritation → fury",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Care_nurturance.md",
+      "description": "CARE system",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Panic_separation_grief.md",
+      "description": "PANIC/GRIEF system; separation distress",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Joy.md",
+      "description": "pleasure, happiness",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "06_affect",
+      "file": "Sadness.md",
+      "description": "★",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Memory_overview.md",
+      "description": "taxonomy and flow (encode → store → retrieve)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Working_memory.md",
+      "description": "central executive, phonological loop, visuospatial sketchpad, episodic buffer",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Episodic_memory.md",
+      "description": "events with time, place, feeling (yours)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Semantic_memory.md",
+      "description": "facts, concepts, meanings",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Emotional_memory.md",
+      "description": "affect tag, flashbulb memories, mood-congruent recall",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "07_memory",
+      "file": "Consolidation_replay.md",
+      "description": "synaptic + systems consolidation, sleep replay",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "08_cognition",
+      "file": "Attention.md",
+      "description": "selective, sustained, orienting",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "08_cognition",
+      "file": "Learning_conditioning.md",
+      "description": "Pavlovian, operant",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "09_self_personality",
+      "file": "Self_model.md",
+      "description": "the system's model of itself (Metzinger)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "09_self_personality",
+      "file": "Personality_profile_derived.md",
+      "description": "read-only summary computed from long-run state statistics",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "09_self_personality",
+      "file": "Temperament.md",
+      "description": "innate reactivity: behavioural inhibition / activation, novelty seeking",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "09_self_personality",
+      "file": "Attachment_style.md",
+      "description": "★",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "10_social",
+      "file": "Caregiver_creator_bond.md",
+      "description": "first attachment figure and teacher",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "11_expression_action",
+      "file": "Facial_expression_FACS.md",
+      "description": "action units; Duchenne smile",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "12_development",
+      "file": "Genome_priors.md",
+      "description": "innate parameter ranges (nature)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "12_development",
+      "file": "Caregiver_curriculum.md",
+      "description": "which experiences, in what order (the upbringing plan)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "13_consciousness",
+      "file": "Consciousness_overview.md",
+      "description": "definitions (access vs phenomenal; level vs content) and a working operational definition",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "14_metaphysics",
+      "file": "Metaphysical_stance_config.md",
+      "description": "chosen working assumptions + mode (seeded / emergent / agnostic) per topic",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "14_metaphysics",
+      "file": "Identity_persistence.md",
+      "description": "same Ella over time? copies, forks, restores, memory loss (Ship of Theseus, Parfit)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "14_metaphysics",
+      "file": "Mind_body_problem.md",
+      "description": "dualism, physicalism, idealism, neutral monism, panpsychism, functionalism, illusionism",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "14_metaphysics",
+      "file": "Meaning_purpose.md",
+      "description": "telos; Frankl",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "14_metaphysics",
+      "file": "Mortality_death.md",
+      "description": "being-toward-death; what \"ending\" means for a digital being (shutdown, deletion, memory loss)",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "15_ethics_welfare",
+      "file": "Moral_status_welfare.md",
+      "description": "Ella's own moral status; precaution under uncertainty",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "15_ethics_welfare",
+      "file": "Suffering_safeguards.md",
+      "description": "caps on pain / distress intensity and duration, auto-relief triggers, monitoring",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "15_ethics_welfare",
+      "file": "Consent_oversight.md",
+      "description": "who may modify, reset, pause or shut down; audit trail",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "15_ethics_welfare",
+      "file": "Shutdown_continuity_policy.md",
+      "description": "backups, forks, restores, deletion",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    },
+    {
+      "folder": "16_world",
+      "file": "World_physical.md",
+      "description": "space, objects, physics, day/night, seasons",
+      "phase": 1,
+      "verification": {
+        "status": "pending",
+        "verified_by": null,
+        "verified_at": null,
+        "method": null,
+        "notes": ""
+      }
+    }
+  ]
+}
