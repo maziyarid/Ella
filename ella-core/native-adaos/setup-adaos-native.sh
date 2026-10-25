@@ -8,6 +8,11 @@
 # v2 (2026-10-25, Maziyar's direction): strongest the machine can handle
 # for everyday shutdown use is a 4B chat model; the 7B coder is the heavier
 # second model for leave-running tasks. 14B+ ruled out (too slow on i5-4460).
+# v2.1 (2026-10-25): step 5 fixed — HuggingFace split the Q4_K_M GGUF into
+# two parts (single file 404s), so download both parts; a fallback-file
+# failure no longer kills the install (warn and continue). v1 ran on AdaOS
+# 2026-10-25 12:42: steps 1-4 OK (qwen2.5:7b pulled, smoke test "Ella is
+# here." passed); step 5 404 stopped it before step 6 (units not installed).
 set -euo pipefail
 
 ELLA_USER="ella"
@@ -15,7 +20,10 @@ ELLA_HOME="/home/ella"
 MODEL="qwen3:4b"
 CODER_MODEL="qwen2.5-coder:7b"
 # Qwen2.5-7B-Instruct Q4_K_M GGUF, for the llama.cpp fallback path.
-GGUF_URL="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf"
+# NOTE: as of 2026-10-25 the single file no longer exists on HuggingFace —
+# it is split into two parts; llama.cpp loads split files via part 1.
+GGUF_PART1="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf"
+GGUF_PART2="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf"
 
 say() { printf '\n==> %s\n' "$*"; }
 
@@ -67,13 +75,21 @@ fi
 ollama run "$MODEL" "Say 'Ella is here' and nothing else." < /dev/null | head -c 500
 echo
 
-say "5/6 llama.cpp fallback (only the GGUF file, no build yet)"
-GGUF_FILE="$ELLA_HOME/models/qwen2.5-7b-instruct-q4_k_m.gguf"
-if [ -f "$GGUF_FILE" ]; then
-  echo "GGUF already present, skipping download."
+say "5/6 llama.cpp fallback (only the GGUF files, no build yet)"
+# Fallback only — Ollama above is the real offline brain. A failure here
+# must never kill the install again, so this step warns and continues.
+GGUF1="$ELLA_HOME/models/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf"
+GGUF2="$ELLA_HOME/models/qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf"
+if [ -f "$GGUF1" ] && [ -f "$GGUF2" ]; then
+  echo "GGUF parts already present, skipping download."
 else
-  sudo -u "$ELLA_USER" curl -fsSL -o "$GGUF_FILE" "$GGUF_URL"
-  echo "Downloaded $GGUF_FILE ($(du -h "$GGUF_FILE" | cut -f1))"
+  if sudo -u "$ELLA_USER" curl -fsSL -o "$GGUF1" "$GGUF_PART1" \
+  && sudo -u "$ELLA_USER" curl -fsSL -o "$GGUF2" "$GGUF_PART2"; then
+    echo "Downloaded GGUF parts ($(du -h "$GGUF1" "$GGUF2" | awk '{s+=$1} END {print s}'))"
+  else
+    echo "WARNING: GGUF download failed (optional fallback only) — continuing." >&2
+    rm -f "$GGUF1" "$GGUF2"
+  fi
 fi
 
 say "6/6 Systemd units (resource-capped, LAN-only)"
