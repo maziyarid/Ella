@@ -5,9 +5,12 @@ Plan: `../native-adaos-plan-2026-10-25.md` (the authority; read it first).
 Files here:
 
 - `setup-adaos-native.sh` — run with sudo on AdaOS while the internet is up.
-  Creates the `ella` user, installs Ollama, downloads Qwen2.5-7B Q4, installs
+  Creates the `ella` user, installs Ollama, downloads Qwen3-4B (everyday
+  offline brain) + Qwen2.5-Coder-7B (heavier leave-running work), installs
   the units below. Idempotent; read before running; UNTESTED on his PC
-  (SSH still unreachable 2026-10-24).
+  (SSH still unreachable 2026-10-24). v2 (2026-10-25): model split per
+  Maziyar's direction — strongest the machine can handle everyday is 4B;
+  14B+ ruled out on i5-4460.
 - `ella-model.service` — model server, on-demand, localhost-only, capped at
   10G RAM / 300% CPU.
 - `ella-backup.sh` — encrypted backup job. Needs `ELLA_GPG_RECIPIENT` set to

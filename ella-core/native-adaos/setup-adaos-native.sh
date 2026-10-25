@@ -4,12 +4,16 @@
 # UNTESTED on Maziyar's PC (SSH still unreachable 2026-10-24) — read before
 # running; every step prints what it is about to do. Safe to re-run: all
 # steps are idempotent (they skip work already done).
-# $0 only: Ollama, llama.cpp fallback, Qwen2.5-7B Q4 — all free.
+# $0 only: Ollama, llama.cpp fallback, Qwen3-4B + Qwen2.5-Coder-7B — all free.
+# v2 (2026-10-25, Maziyar's direction): strongest the machine can handle
+# for everyday shutdown use is a 4B chat model; the 7B coder is the heavier
+# second model for leave-running tasks. 14B+ ruled out (too slow on i5-4460).
 set -euo pipefail
 
 ELLA_USER="ella"
 ELLA_HOME="/home/ella"
-MODEL="qwen2.5:7b"
+MODEL="qwen3:4b"
+CODER_MODEL="qwen2.5-coder:7b"
 # Qwen2.5-7B-Instruct Q4_K_M GGUF, for the llama.cpp fallback path.
 GGUF_URL="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf"
 
@@ -43,15 +47,23 @@ else
 fi
 systemctl enable ollama >/dev/null 2>&1 || true
 
-say "4/6 Download the offline model ($MODEL) + verify it loads"
+say "4/6 Download the offline models + verify the everyday one loads"
 # Must happen while the internet is up — an offline brain not on disk
 # doesn't exist when you need it.
+# Everyday brain: 4B chat model (fastest usable on i5-4460, ~6-10 words/sec).
 if ollama list 2>/dev/null | grep -q "^$MODEL"; then
   echo "Model $MODEL already present, skipping download."
 else
   ollama pull "$MODEL"
 fi
-# Smoke test: one short answer, then stop. Proves the model actually runs.
+# Heavier brain: 7B coder for leave-running tasks (~2-4 words/sec).
+if ollama list 2>/dev/null | grep -q "^$CODER_MODEL"; then
+  echo "Model $CODER_MODEL already present, skipping download."
+else
+  ollama pull "$CODER_MODEL"
+fi
+# Smoke test: one short answer from the everyday model, then stop.
+# Proves the model actually runs on this machine.
 ollama run "$MODEL" "Say 'Ella is here' and nothing else." < /dev/null | head -c 500
 echo
 
@@ -80,8 +92,9 @@ systemctl enable ella-backup.timer >/dev/null 2>&1 || true
 systemctl disable ella-model.service >/dev/null 2>&1 || true
 
 say "Done. Next steps:"
-echo "  - Start the model when you want to talk offline: sudo systemctl start ella-model"
-echo "  - Talk to it: ollama run $MODEL"
+echo "  - Everyday offline chat: ollama run $MODEL"
+echo "  - Heavier coding work (leave it running): ollama run $CODER_MODEL"
+echo "  - Start the model server on demand: sudo systemctl start ella-model"
 echo "  - Stop it when done: sudo systemctl stop ella-model"
 echo "  - First backup: sudo -u $ELLA_USER bash $ELLA_HOME/ella-core/native-adaos/ella-backup.sh"
 echo "  - Then run the restore drill (plan §6) before trusting the backup."
