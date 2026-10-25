@@ -1,0 +1,26 @@
+[Unit]
+Description=Ella Core offline model server (on-demand)
+After=network.target
+
+[Service]
+Type=simple
+User=ella
+Group=ella
+# On-demand only: start with `systemctl start ella-model`, stop when done.
+# Binds localhost only — LAN access goes through SSH forwarding, never the open internet.
+Environment=OLLAMA_HOST=127.0.0.1:11434
+ExecStart=/usr/local/bin/ollama serve
+Restart=on-failure
+RestartSec=5
+# Caps: the model must never eat Maziyar's working machine.
+MemoryMax=10G
+CPUQuota=300%
+# Sandboxing: no new privileges, private /tmp, read-only system dirs.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ella
+
+[Install]
+WantedBy=multi-user.target

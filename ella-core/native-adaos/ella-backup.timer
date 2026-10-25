@@ -1,0 +1,12 @@
+[Unit]
+Description=Ella Core encrypted backup, hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+# Diary + memory are small and change often; the hourly full snapshot plus
+# the 5-minute diary/memory sync (when implemented) is the constant layer.
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

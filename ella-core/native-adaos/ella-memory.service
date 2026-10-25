@@ -1,0 +1,24 @@
+[Unit]
+Description=Ella Core local memory plane + diary writer
+After=network.target
+
+[Service]
+Type=simple
+User=ella
+Group=ella
+# STUB until the Mem0 / enclave-host decision lands (blueprint §10).
+# File memory + Engram (SQLite) first; this unit is the placeholder the
+# real memory service will replace. It currently just keeps the diary
+# directory watched and the append-only log writable — no network, no model.
+ExecStart=/bin/sleep infinity
+Restart=on-failure
+MemoryMax=1G
+CPUQuota=50%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ella
+
+[Install]
+WantedBy=multi-user.target

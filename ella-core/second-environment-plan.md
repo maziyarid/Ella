@@ -1,5 +1,13 @@
 # Ella's second environment — on Maziyar's PC + Dropbox backups
 
+> **SUPERSEDED 2026-10-25, at Maziyar's word.** The native AdaOS plan
+> (`native-adaos-plan-2026-10-25.md`) replaces this one: no VM, no Kali yet,
+> Core runs natively on AdaOS as the `ella` user, $0, offline 7B model,
+> constant encrypted backup. This file is kept for the record — the VM route
+> stays available if isolation ever needs to be stronger, and the Dropbox /
+> ciphertext-only backup design in §"What Ella prepares" carries over
+> unchanged.
+
 Plan drafted 2026-10-20 at Maziyar's order. He installs the OS with/for Ella;
 Ella prepares everything that goes inside it.
 

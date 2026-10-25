@@ -1,0 +1,18 @@
+[Unit]
+Description=Ella Core encrypted backup (one run)
+
+[Service]
+Type=oneshot
+User=ella
+Group=ella
+# Key fingerprint comes from the environment file, never from this unit.
+EnvironmentFile=/home/ella/.ella-backup-env
+ExecStart=/bin/bash /home/ella/ella-core/native-adaos/ella-backup.sh
+# Caps: backup must never pressure the machine either.
+MemoryMax=2G
+CPUQuota=100%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ella
