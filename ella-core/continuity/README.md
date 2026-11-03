@@ -21,9 +21,13 @@ modify Ella-Brain (`_io.py`, `_stages.py`, their tests, the Task/Agent schema or
 | `checker.py` | Offline checker / context assembler. Python stdlib only. Reuses `ella/lib/pain.py` severities. |
 | `test_checker.py` | 40 deterministic tests, including mutation tests that prove each rule actually bites |
 | `adapter.py` | Read-only adapter: synthetic copy of the discovered `/home/ella` layout → checker. See `ADAPTER.md` |
-| `ADAPTER.md` | Actual runtime, read ownership, integration boundary, next blocker |
+| `ADAPTER.md` | Runtime as intended by source vs recorded as completed vs unknown; read ownership; integration boundary; next blocker |
 | `synthetic/` | Synthetic copy (`home-ella/`), its manifest and an attestation file kept outside the memory root |
-| `test_adapter.py` | 26 adapter-to-checker tests (altered bytes, forged authority, missing files, D2, unauthorized paths, fresh-process restart) |
+| `test_adapter.py` | 27 adapter-to-checker tests (altered bytes, forged authority, missing files, D2, unauthorized paths, fresh-process restart, boundary-is-not-evidence) |
+| `inventory.py` | Read-only layout inventory of `/home/ella/memory` and `/home/ella/diary` for Maziyar to run locally: sizes and sha256, no contents, no symlinks followed. Prepared, **not run** on the PC |
+| `test_inventory.py` | 20 tests on invented temporary trees (missing/inaccessible targets, symlinks, FIFOs, changes during read, no content or names in the summary) |
+| `LIVE_INVENTORY_PROCEDURE.md` | Steps for the local run, private vs shareable outputs, and the minimum format information needed afterwards |
+| `ATTESTATION.md` | Owner-controlled attestation workflow (signed append-only register, exact-byte binding, withdrawal, replacement). Specified, not implemented |
 | `DECISIONS.md` | Decision register: one open owner decision (D1) and the recorded lane directions |
 
 ## Fixture coverage
@@ -61,7 +65,8 @@ cd ella-core/continuity
 python3 -B checker.py fixtures/                      # expect: 16/16 fixtures passed, exit 0
 python3 -B checker.py --manifest manifest.example.json   # expect: "valid": true
 python3 -B -m unittest -v test_checker               # expect: Ran 40 tests ... OK
-python3 -B -m unittest -v test_adapter               # expect: Ran 26 tests ... OK
+python3 -B -m unittest -v test_adapter               # expect: Ran 27 tests ... OK
+python3 -B -m unittest -v test_inventory             # expect: Ran 20 tests ... OK
 python3 -B checker.py fixtures/F10_persian_preference_corrected.json --report   # structured report
 ```
 
@@ -100,7 +105,7 @@ Existing code reused: `ella/lib/pain.py` severity tiers (gap severities); the `0
 existed to extend, so the checker is a side-effect-free reader, not a new store or write path.
 
 Tests actually run (disposable sandbox, offline, Python 3.14.8): Ella-Brain `main` suite, 38 passed; `check_qalam.py`, 6966 samples passed;
-`checker.py fixtures/`, 16/16; `test_checker`, 40 passed and `test_adapter`, 26 passed after the 2026-11-03 review and adapter work (23 before; unittest and pytest). Nothing ran on Ella's machines or production.
+`checker.py fixtures/`, 16/16; `test_checker` 40, `test_adapter` 27 and `test_inventory` 20 passed (87 total, unittest and pytest). These are **synthetic verification** of the code's own rules. They are not evidence of compatibility with live memory, whose layout and format have not been observed. Nothing ran on Ella's machines or production.
 
 Not verified: the four-store agreement itself (not recorded in either repository); the live layout of `/home/ella` (`diary/` vs `memory/`);
 any real memory contents; the unpublished lock-hardening slice (25/47 tests, reported only); the Phase 1–2 traces (provider-backed, not re-run);

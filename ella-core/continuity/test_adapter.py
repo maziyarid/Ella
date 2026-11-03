@@ -215,6 +215,11 @@ class MissingAndUnauthorized(Copy):
         self.assertEqual(out["attestation_source"]["status"], "missing")
         self.assertEqual(out["report"]["applied"], {})
 
+    def test_attestation_file_is_boundary_not_owner_evidence(self):
+        out = self.run_adapter()
+        self.assertEqual(out["attestation_source"]["status"], "read")
+        self.assertTrue(out["attestation_source"]["owner_approval_evidence"].startswith("none"))
+
     def test_no_attestation_source_given(self):
         out = self.run_adapter(att=None)
         self.assertEqual(out["attestation_source"]["status"], "absent")

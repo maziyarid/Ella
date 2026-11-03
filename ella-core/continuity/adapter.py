@@ -141,7 +141,9 @@ def extract_records(rel: str, data: bytes):
 
 def load_attestations(root: Path, path: Path | None, layout: dict):
     """The attestation source must live outside every authorized memory root."""
-    info = {"status": "absent", "sha256": None, "label": None}
+    # A separate file is a boundary, not evidence of owner approval. No signature is verified here (ATTESTATION.md).
+    info = {"status": "absent", "sha256": None, "label": None,
+            "owner_approval_evidence": "none: unsigned boundary file, no signature verified"}
     if path is None:
         return info, {}, {}
     rp = path.resolve()
