@@ -36,6 +36,14 @@
         "readable": true,
         "sha256": "sha256:fx-guardians-v2"
       }
+    },
+    "authority_attestations": {
+      "core:pref-tea-v2": "owner_approved",
+      "idx:tea-summary": "derived"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic.",
+    "accepted_revisions": {
+      "src:core": "sha256:fx-core-r13"
     }
   },
   "query": {

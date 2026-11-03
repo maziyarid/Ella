@@ -9,6 +9,14 @@ It performs no network calls, writes no files, starts no scheduler and invokes
 no provider model. It only reads the paths it is given (plus a `$base`
 manifest named inside a fixture, resolved relative to that fixture).
 
+Trust boundary: this is a synthetic evaluation harness, not a live-memory
+loader. Everything under a fixture's `observed` key (source hashes, fresh
+checks, authority attestations, accepted revisions) stands in for what a live
+adapter must derive itself from trusted observations and accepted decision
+records. The checker enforces that authority comes from that channel and never
+from a record's own `authority` field, but it cannot authenticate the channel.
+Every report says so in `trust`.
+
 Reuses `ella/lib/pain.py` severity tiers for gaps (missing source -> degraded,
 P0 integrity failure -> blocked), matching the 03_MEMORY supervisor rule that
 retrieval misses emit degraded.
@@ -44,6 +52,14 @@ AUTHORITY_RANK = {
     "ella_inferred": 1,
     "third_party_reported": 0,
     "derived": -1,
+}
+UNATTESTED = "unattested"
+AUTHORITY_RANK_EFFECTIVE = {**AUTHORITY_RANK, UNATTESTED: -2}
+TRUST = {
+    "mode": "synthetic_fixture",
+    "authority": "claimed_by_record; effective = min(claim, attestation from observed channel)",
+    "observations": "supplied_by_fixture_not_authenticated",
+    "live_memory_use": "not_permitted",
 }
 PRIVACY_LEVELS = {"public": 0, "private": 1, "restricted": 2}
 REALITIES = {"stated", "observed", "inferred", "reported", "simulated",
@@ -88,8 +104,15 @@ def parse_time(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def valid_token_count(value) -> bool:
+    """A declared token count must be a positive int. bool is rejected (True == 1)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
 def tokens_of(record: dict) -> int:
-    if isinstance(record.get("tokens"), int):
+    if "tokens" in record:
+        if not valid_token_count(record["tokens"]):
+            raise ValueError(f"invalid token count: {record['tokens']!r}")
         return record["tokens"]
     return max(1, math.ceil(len(str(record.get("content", ""))) / 4))
 
@@ -156,12 +179,14 @@ def validate_manifest(m: dict) -> list:
     for prof in m["profiles"]:
         if not prof.get("sha256") or not (prof.get("approval") or {}).get("by"):
             errors.append(f"profile_not_approved_or_unhashed:{prof.get('id')}")
+        if not valid_token_count(prof.get("tokens")):
+            errors.append(f"bad_profile_tokens:{prof.get('id')}:{prof.get('tokens')!r}")
     p0 = [lo for lo in m["load_order"] if lo.get("priority") == "P0"]
     if not p0 or not p0[0].get("never_drop"):
         errors.append("p0_must_be_never_drop")
     if (m["privacy"] or {}).get("session_clearance") not in PRIVACY_LEVELS:
         errors.append("bad_session_clearance")
-    if not isinstance(m["context_budget_tokens"], int) or m["context_budget_tokens"] <= 0:
+    if not valid_token_count(m["context_budget_tokens"]):
         errors.append("bad_budget")
     _scan(m, "manifest", errors)
     return errors
@@ -233,7 +258,7 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         "prior_receipts": [], "selected": [], "applied": {}, "omitted": [],
         "irrelevant_count": 0, "unresolved": [], "correction_history": [],
         "authority_from_memory": [], "policy_sources": [], "people": {},
-        "tokens_used": 0,
+        "tokens_used": 0, "trust": dict(TRUST),
     }
     if report["manifest_errors"]:
         report["boot_status"] = "invalid_manifest"  # fail closed: select nothing
@@ -253,7 +278,17 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
                                    "note": "source missing or unreadable; contents not inferred"})
         else:
             source_hash[src["id"]] = obs.get("sha256")
-            status = "match" if obs.get("sha256") == src["sha256"] else "changed"
+            accepted = (observed.get("accepted_revisions") or {}).get(src["id"])
+            if obs.get("sha256") == src["sha256"]:
+                status = "match"
+            elif accepted and accepted == obs.get("sha256"):
+                status = "accepted_revision"  # an accepted decision names this exact new hash
+            else:
+                status = "changed_unreconciled"
+                report["gaps"].append({"source_id": src["id"], "store": src["store"],
+                                       "severity": "degraded",
+                                       "note": "hash differs from manifest and no accepted revision; "
+                                               "records held back pending reconciliation"})
         source_status[src["id"]] = status
         report["integrity"].append({"id": src["id"], "expected": src["sha256"],
                                     "observed": source_hash.get(src["id"]), "status": status})
@@ -271,7 +306,7 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
                                    "severity": "blocked",
                                    "note": "approved profile missing or not the approved version"})
             report["boot_status"] = "blocked_profile_integrity"
-        p0_tokens += int(prof.get("tokens", 0))
+        p0_tokens += prof["tokens"]  # validated positive int
     assert all(g["severity"] in SEVERITIES for g in report["gaps"])
     if report["boot_status"] != "ok":
         return report
@@ -307,10 +342,22 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         report["omitted"].append(entry)
 
     # 1-4: validation, privacy, source availability, staleness.
-    registered = {s["id"] for s in m["memory_sources"]}
+    registered = {s["id"]: s["store"] for s in m["memory_sources"]}
+    integrity_unresolved = [{"type": "source_revision_unreconciled", "ids": [sid]}
+                            for sid, st in sorted(source_status.items()) if st == "changed_unreconciled"]
+    id_counts = {}
+    for r in fixture.get("records", []):
+        id_counts[r.get("id", "<no-id>")] = id_counts.get(r.get("id", "<no-id>"), 0) + 1
+    for rid, n in sorted(id_counts.items()):
+        if n > 1:
+            integrity_unresolved.append({"type": "duplicate_record_id", "ids": [rid], "count": n})
+    attest = observed.get("authority_attestations") or {}
     pool = {}
     for r in fixture.get("records", []):
         rid = r.get("id", "<no-id>")
+        if id_counts[rid] > 1:
+            omit(rid, "duplicate_record_id", True, "no copy is trusted until the ID collision is resolved")
+            continue
         prov = r.get("provenance") or {}
         if not all(prov.get(k) for k in ("recorded_by", "method", "source_ref")):
             omit(rid, "missing_provenance", True,
@@ -319,6 +366,9 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         if any(k not in r for k in REQUIRED_RECORD) or r.get("reality") not in REALITIES \
                 or r.get("authority") not in AUTHORITY_RANK:
             omit(rid, "invalid_record", True)
+            continue
+        if "tokens" in r and not valid_token_count(r["tokens"]):
+            omit(rid, "invalid_record", True, f"token count must be a positive integer, got {r['tokens']!r}")
             continue
         if PRIVACY_LEVELS.get(r.get("privacy", "private"), 2) > clearance:
             omit(rid, "privacy_filtered")
@@ -329,6 +379,9 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
             if source_status.get(src) in (None, "missing"):
                 omit(rid, "derived_source_unverifiable", True)
                 continue
+            if source_status.get(src) == "changed_unreconciled":
+                omit(rid, "source_changed_unreconciled", True)
+                continue
             if df.get("sha256") != source_hash.get(src):
                 omit(rid, "stale_derived", True, f"built from {df.get('sha256')}, source now {source_hash.get(src)}")
                 continue
@@ -338,8 +391,15 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         elif r["source_id"] not in registered:
             omit(rid, "unregistered_source", True)
             continue
+        elif r["store"] != registered[r["source_id"]]:
+            omit(rid, "store_source_mismatch", True,
+                 f"record says {r['store']}, source {r['source_id']} is registered as {registered[r['source_id']]}")
+            continue
         elif source_status.get(r["source_id"]) == "missing":
             omit(rid, "source_missing", True)
+            continue
+        elif source_status.get(r["source_id"]) == "changed_unreconciled":
+            omit(rid, "source_changed_unreconciled", True)
             continue
         pool[rid] = r
 
@@ -355,7 +415,17 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         return bool(terms & q_terms)
 
     rel = {rid: relevant(r) for rid, r in pool.items()}
-    rank = {rid: AUTHORITY_RANK[r["authority"]] for rid, r in pool.items()}
+    # Authority is never taken from the record alone. The effective level is the
+    # lower of the record's claim and the attestation from the observed channel;
+    # without an attestation the record ranks below every attested level.
+    effective = {}
+    for rid, r in pool.items():
+        att = attest.get(rid)
+        if att not in AUTHORITY_RANK:
+            effective[rid] = UNATTESTED
+        else:
+            effective[rid] = min(r["authority"], att, key=lambda a: AUTHORITY_RANK[a])
+    rank = {rid: AUTHORITY_RANK_EFFECTIVE[a] for rid, a in effective.items()}
 
     # Fresh derived entries never replace the authoritative record they index.
     for rid, r in list(pool.items()):
@@ -367,19 +437,45 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
 
     # 5: supersession (explicit links only) and slot resolution.
     superseded, contested, unresolved = {}, set(), []
+    edges = []  # (by, target, accepted)
     for rid in sorted(pool):
         r = pool[rid]
         for target in r.get("supersedes", []):
             if target not in pool:
                 unresolved.append({"type": "supersedes_unknown_record", "ids": sorted([rid, target])})
                 continue
-            accepted = rank[rid] >= rank[target]
-            report["correction_history"].append({"superseded": target, "by": rid, "accepted": accepted})
-            if accepted:
-                superseded[target] = rid
-            else:
+            ok = effective[rid] != UNATTESTED and rank[rid] >= rank[target]
+            edges.append((rid, target, ok))
+            if not ok:
                 contested.add(rid)
                 unresolved.append({"type": "supersession_lacks_authority", "ids": sorted([target, rid])})
+    # Accepted links that form a cycle (A supersedes B, B supersedes A, ...) resolve nothing.
+    graph = {}
+    for by, target, ok in edges:
+        if ok:
+            graph.setdefault(by, set()).add(target)
+    def reach(start):
+        out, stack = set(), list(graph.get(start, ()))
+        while stack:
+            n = stack.pop()
+            if n not in out:
+                out.add(n)
+                stack.extend(graph.get(n, ()))
+        return out
+    reachable = {n: reach(n) for n in sorted(graph)}
+    in_cycle = {n for n, rs in reachable.items() if n in rs}
+    cycles = []
+    for node in sorted(in_cycle):
+        if not any(node in c for c in cycles):
+            cycles.append({node} | {n for n in reachable[node] if node in reachable.get(n, ())})
+    for c in cycles:
+        contested |= c
+        unresolved.append({"type": "supersession_cycle", "ids": sorted(c)})
+    for by, target, ok in edges:
+        accepted = ok and not (by in in_cycle and target in in_cycle)
+        report["correction_history"].append({"superseded": target, "by": by, "accepted": accepted})
+        if accepted:
+            superseded[target] = by
     for target, by in superseded.items():
         if rel.get(target) or rel.get(by):
             omit(target, "superseded", False, f"superseded by {by}; kept in correction_history")
@@ -412,6 +508,7 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
             report["irrelevant_count"] += 1
     rel_ids = {r["id"] for r in candidates}
     report["unresolved"] = [u for u in unresolved if set(u["ids"]) & (rel_ids | set(superseded))]
+    report["unresolved"] += integrity_unresolved  # always reported, relevant or not
     report["correction_history"] = [h for h in report["correction_history"]
                                     if h["by"] in rel_ids or h["superseded"] in rel_ids]
     report["applied"] = {s: i for s, i in report["applied"].items() if i in rel_ids}
@@ -478,8 +575,11 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
         report["tokens_used"] += cost
         role = "applied" if r["id"] in report["applied"].values() else (
             "contested" if r["id"] in contested else "context")
+        if effective[r["id"]] == UNATTESTED:
+            flags[r["id"]].append("authority_unattested")
         report["selected"].append({
-            "id": r["id"], "label": label_for(r), "role": role, "authority": r["authority"],
+            "id": r["id"], "label": label_for(r), "role": role, "authority": effective[r["id"]],
+            "claimed_authority": r["authority"],
             "store": r["store"], "source_ref": r["provenance"]["source_ref"], "flags": flags[r["id"]]})
     selected_ids = {s["id"] for s in report["selected"]}
     report["applied"] = {s: i for s, i in report["applied"].items() if i in selected_ids}

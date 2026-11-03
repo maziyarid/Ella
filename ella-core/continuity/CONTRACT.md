@@ -4,6 +4,22 @@ Scope: what a new session, a restarted worker or a replacement VM may carry forw
 selects memory into a bounded context. The deterministic parts are enforced by `checker.py`. The contract does not
 claim to establish consciousness, personality authenticity or general intelligence.
 
+## 0. Trust boundary (read first)
+
+`checker.py` is a synthetic evaluation harness. It is not a live-memory loader and must not be connected to real memory
+as one. Within a fixture, everything under `observed` (source hashes, fresh capability checks, authority attestations,
+accepted revisions) is supplied by the fixture. A live adapter must derive each of these itself:
+
+| Field | Live adapter must derive it from | Never from |
+|---|---|---|
+| `observed.sources.*.sha256` | Hashing the source bytes it actually read | The manifest, the record or a previous receipt |
+| `observed.fresh_checks` | Checks run in the current boot | Memory, prior receipts, another VM |
+| `observed.authority_attestations` | Accepted decision records and trusted observations, linked by record ID | The record's own `authority` field or any retrieved memory content |
+| `observed.accepted_revisions` | An accepted decision naming the exact new source hash | The changed source itself |
+
+The checker enforces the separation (a record's `authority` is only a claim) but cannot authenticate the channel. Every
+report carries `trust.live_memory_use = "not_permitted"`.
+
 ## 1. Bootstrap manifest
 
 One compact JSON document (`manifest.example.json` is a synthetic example). Required top-level fields:
@@ -42,13 +58,22 @@ look like key material (`-----BEGIN … PRIVATE KEY-----`, `ghp_…`, `sk-…`),
 ## 2. Boot sequence
 
 1. Validate the manifest (schema, forbidden content, four-store rule).
-2. Check integrity: compare each source's observed hash to the manifest. Results are `match`, `changed` or `missing`.
-   A missing source is a gap (`degraded` per `ella/lib/pain.py` tiers). A missing or mismatched P0 profile is `blocked`.
+2. Check integrity: compare each source's observed hash to the manifest. Results are `match`, `accepted_revision`,
+   `changed_unreconciled` or `missing`. A missing source is a gap (`degraded` per `ella/lib/pain.py` tiers). A missing or
+   mismatched P0 profile is `blocked`.
+   A hash that differs from the manifest is `accepted_revision` only when `observed.accepted_revisions` names that exact
+   observed hash. Otherwise it is `changed_unreconciled`: the source is a `degraded` gap, its records and any index built
+   on it are omitted (`source_changed_unreconciled`), and `source_revision_unreconciled` is always reported. A changed
+   source never keeps ordinary authority by default.
 3. Load P0 profiles. If P0 exceeds the budget, boot fails loudly (`boot_failed`). Safety and identity text is never dropped.
 4. Mark all environment checks `unverified_requires_fresh_check` unless the current boot supplied a fresh result.
 5. Assemble context (section 4).
 
 ## 3. Authority, supersession and contradiction
+
+Effective authority is the lower of the record's claimed `authority` and its attestation in
+`observed.authority_attestations`. A record with no attestation is `unattested`: it ranks below every attested level,
+is flagged `authority_unattested`, and cannot supersede anything. An attestation can lower a claim but never raise it.
 
 Authority ranks, high to low: `owner_approved` (4) > `owner_stated` (3) > `ella_observed` (2) > `ella_inferred` (1) >
 `third_party_reported` (0). `derived` index content has no authority.
@@ -58,13 +83,17 @@ Authority ranks, high to low: `owner_approved` (4) > `owner_stated` (3) > `ella_
 - A newer record that tries to supersede, or that shares a `slot` with, a higher-ranked record does not win because it is newer.
   The higher-ranked record stays applied, the newer one is shown as `contested`, and the conflict is listed as unresolved.
 - Two heads of equal rank in the same slot: neither is applied. Both are `contested`, and the conflict is unresolved.
+- Accepted `supersedes` links that form a cycle (A→B→A, or longer) resolve nothing. Every record in the cycle stays in
+  the pool as `contested`, no link in it is accepted, and `supersession_cycle` is reported.
 - A confidence score is not provenance. A record without `provenance.recorded_by`, `method` and `source_ref` is rejected (`missing_provenance`) whatever its confidence.
 
 ## 4. Retrieval and context assembly
 
 Order of operations (deterministic):
 
-1. Record validation (required fields, provenance).
+1. Record validation: required fields, provenance, a declared `tokens` value must be a positive integer (not `bool`),
+   and a record's `store` must equal the store registered for its `source_id` (`store_source_mismatch`). Record IDs must
+   be unique: every copy of a duplicated ID is omitted (`duplicate_record_id`) and the collision is always reported.
 2. Privacy filtering (before anything is assembled). Records above `session_clearance` are omitted as `privacy_filtered`.
 3. Source availability. Records from a missing source cannot appear. Derived entries whose source is missing are `derived_source_unverifiable`.
 4. Staleness. A derived entry whose `built_from.sha256` differs from the source's observed hash is `stale_derived`. Derived entries are never preferred over the authoritative record.
@@ -100,8 +129,8 @@ People: records about different `person_id`s are never merged. Similar names acr
 ## 5. Report shape
 
 `checker.py --report` emits: `boot_status`, `manifest_errors`, `integrity`, `gaps`, `capabilities`, `environment_ready`,
-`selected` (id, label, role, authority, source_ref, flags), `applied` (slot → id), `omitted` (id, reason, meaningful),
-`irrelevant_count`, `unresolved`, `correction_history`, `authority_from_memory`, `policy_sources`, `tokens_used`.
+`selected` (id, label, role, authority (effective), claimed_authority, source_ref, flags), `applied` (slot → id), `omitted` (id, reason, meaningful),
+`irrelevant_count`, `unresolved`, `correction_history`, `authority_from_memory`, `policy_sources`, `tokens_used`, `trust`.
 
 ## 6. Deterministic checks vs language-model evaluation
 

@@ -3,6 +3,9 @@
 A portable, testable contract for what Ella may carry across a new session, a worker failure or a VM replacement, and a
 deterministic offline checker that tests it against invented fixtures.
 
+Status: synthetic evaluation harness only. It is not a trustworthy live-memory loader. See "Before any live use" below and
+`CONTRACT.md` section 0.
+
 This is a proposal on a review branch. It does not move or rewrite live memory, profiles or production state. It does not
 modify Ella-Brain (`_io.py`, `_stages.py`, their tests, the Task/Agent schema or `blocked` semantics) or the voice-preview lane.
 
@@ -16,8 +19,8 @@ modify Ella-Brain (`_io.py`, `_stages.py`, their tests, the Task/Agent schema or
 | `manifest.example.json` | Synthetic bootstrap manifest (no real paths, hashes or credentials) |
 | `fixtures/` | 16 synthetic restart fixtures (F01–F15, with F13 split into a/b) |
 | `checker.py` | Offline checker / context assembler. Python stdlib only. Reuses `ella/lib/pain.py` severities. |
-| `test_checker.py` | 23 deterministic tests, including mutation tests that prove each rule actually bites |
-| `DECISIONS.md` | Owner decisions that are still open |
+| `test_checker.py` | 39 deterministic tests, including mutation tests that prove each rule actually bites |
+| `DECISIONS.md` | Decision register: one open owner decision (D1) and the recorded lane directions |
 
 ## Fixture coverage
 
@@ -37,11 +40,12 @@ modify Ella-Brain (`_io.py`, `_stages.py`, their tests, the Task/Agent schema or
 | F12 | Dream, imagined scenario, hypothesis | Speculative labels preserved |
 | F13a | Context budget exceeded | Declared priority order; dropped record reported as a meaningful `budget` omission |
 | F13b | P0 profiles exceed budget | Boot fails loudly; nothing silently dropped |
-| F14 | Stale index, authoritative source changed | Stale derived entry refused; authoritative record used |
+| F14 | Stale index, authoritative source changed under an accepted revision | Stale derived entry refused; authoritative record used; removing the accepted revision holds the source back |
 | F15 | Manifest with credential field, fifth store, blanket grant | Manifest rejected; nothing selected |
 
 Every fixture lists input records with provenance and authority, the expected selected context, expected omissions, expected
-unresolved items and forbidden conclusions. These tests check contract behavior only. They do not show consciousness,
+unresolved items and forbidden conclusions. Each fixture also supplies `observed.authority_attestations`; without them no
+record has effective authority. These tests check contract behavior only. They do not show consciousness,
 personality authenticity or general intelligence.
 
 ## Exact verification
@@ -52,7 +56,7 @@ Requires Python 3.10+ and nothing else. From a checkout of this branch:
 cd ella-core/continuity
 python3 -B checker.py fixtures/                      # expect: 16/16 fixtures passed, exit 0
 python3 -B checker.py --manifest manifest.example.json   # expect: "valid": true
-python3 -B -m unittest -v test_checker               # expect: Ran 23 tests ... OK
+python3 -B -m unittest -v test_checker               # expect: Ran 39 tests ... OK
 python3 -B checker.py fixtures/F10_persian_preference_corrected.json --report   # structured report
 ```
 
@@ -60,6 +64,19 @@ Optional, if pytest is installed: `python3 -B -m pytest -q -p no:cacheprovider t
 
 The checker reads only the paths given (and the `$base` manifest a fixture names). It opens no sockets, writes no files,
 starts no scheduler and calls no model. `test_checker.SideEffects` enforces the no-write and no-network rules.
+
+## Before any live use
+
+Review of 2026-11-03 found three gaps. All three now have checker rules and negative tests (`test_checker`
+classes `AuthorityIsNotSelfAsserted`, `ChangedSourcesAreNotSilentlyTrusted`, `BudgetAndIdentityValidation`):
+
+1. Authority was taken from the record. Now: effective authority = min(claim, attestation); unattested records cannot win or supersede.
+2. A changed source hash still fed the pool. Now: `changed_unreconciled` holds records back unless an accepted revision names the exact new hash.
+3. Negative/boolean token counts, duplicate IDs, record/source store mismatch and equal-authority supersession cycles were not rejected. Now they are.
+
+These rules make the harness stricter. They do not make it a live loader. A live adapter still has to produce the
+`observed` channel from real reads, current-boot checks and accepted decision records (`CONTRACT.md` section 0), and
+that adapter does not exist yet.
 
 ## Deterministic checks vs language-model evaluation
 
@@ -78,7 +95,7 @@ Existing code reused: `ella/lib/pain.py` severity tiers (gap severities); the `0
 existed to extend, so the checker is a side-effect-free reader, not a new store or write path.
 
 Tests actually run (disposable sandbox, offline, Python 3.14.8): Ella-Brain `main` suite, 38 passed; `check_qalam.py`, 6966 samples passed;
-`checker.py fixtures/`, 16/16; `test_checker`, 23 passed (unittest and pytest). Nothing ran on Ella's machines or production.
+`checker.py fixtures/`, 16/16; `test_checker`, 39 passed after the 2026-11-03 review fixes (23 before; unittest and pytest). Nothing ran on Ella's machines or production.
 
 Not verified: the four-store agreement itself (not recorded in either repository); the live layout of `/home/ella` (`diary/` vs `memory/`);
 any real memory contents; the unpublished lock-hardening slice (25/47 tests, reported only); the Phase 1–2 traces (provider-backed, not re-run);

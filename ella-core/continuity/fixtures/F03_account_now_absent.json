@@ -42,7 +42,11 @@
       "path:/home/ella/memory": false,
       "interpreter:python3": true,
       "network:offline-ok": true
-    }
+    },
+    "authority_attestations": {
+      "epi:receipt-provision": "ella_observed"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
   },
   "query": {
     "topics": [

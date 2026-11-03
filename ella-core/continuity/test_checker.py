@@ -119,6 +119,7 @@ class MutationsMustBite(unittest.TestCase):
     def test_equal_authority_slot_conflict_applies_neither(self):
         fx = load("F10")
         by_id(fx, "nb:infer-date-fa")["authority"] = "owner_approved"
+        fx["observed"]["authority_attestations"]["nb:infer-date-fa"] = "owner_approved"  # attested, not self-claimed
         rep, _ = run(fx)
         self.assertNotIn("pref:date_format", rep["applied"])
         self.assertEqual({s["role"] for s in rep["selected"]}, {"contested"})
@@ -184,6 +185,166 @@ class MutationsMustBite(unittest.TestCase):
         fx["expected"]["selected"].append("nb:note-weather")
         _, fails = run(fx)
         self.assertTrue(fails)
+
+
+def omitted(rep):
+    return [(o["id"], o["reason"]) for o in rep["omitted"]]
+
+
+def unresolved(rep):
+    return [(u["type"], tuple(u["ids"])) for u in rep["unresolved"]]
+
+
+class AuthorityIsNotSelfAsserted(unittest.TestCase):
+    """Review finding 1: a record must not gain priority by labelling itself."""
+
+    def test_self_labelled_owner_approval_does_not_win(self):
+        fx = load("F10")
+        by_id(fx, "nb:infer-date-fa")["authority"] = "owner_approved"  # claim only
+        rep, _ = run(fx)
+        self.assertEqual(rep["applied"], {"pref:date_format": "core:pref-date-fa-v2"})
+        sel = {s["id"]: s for s in rep["selected"]}
+        self.assertEqual(sel["nb:infer-date-fa"]["authority"], "ella_inferred")
+        self.assertEqual(sel["nb:infer-date-fa"]["claimed_authority"], "owner_approved")
+
+    def test_unattested_record_cannot_supersede(self):
+        fx = load("F04")
+        del fx["observed"]["authority_attestations"]["core:correction-recoverable"]
+        rep, fails = run(fx)
+        self.assertTrue(fails)
+        self.assertNotIn("core:correction-recoverable", rep["applied"].values())
+        self.assertIn(("supersession_lacks_authority",
+                       ("core:correction-recoverable", "epi:claim-blocked-terminal")), unresolved(rep))
+        sel = {s["id"]: s for s in rep["selected"]}
+        self.assertIn("authority_unattested", sel["core:correction-recoverable"]["flags"])
+
+    def test_attestation_can_lower_but_never_raise_a_claim(self):
+        fx = load("F04")
+        fx["observed"]["authority_attestations"]["epi:claim-blocked-terminal"] = "owner_approved"
+        rep, _ = run(fx)
+        self.assertEqual(rep["applied"], {"status:fx-task-7": "core:correction-recoverable"})
+
+    def test_every_report_declares_the_trust_boundary(self):
+        for path in sorted(FIXTURES.glob("*.json")):
+            rep, _ = checker.run_fixture(path)
+            with self.subTest(fixture=path.name):
+                self.assertEqual(rep["trust"]["live_memory_use"], "not_permitted")
+
+
+class ChangedSourcesAreNotSilentlyTrusted(unittest.TestCase):
+    """Review finding 2: a hash mismatch needs reconciliation or an accepted revision."""
+
+    def test_unaccepted_change_holds_records_back(self):
+        fx = load("F14")
+        del fx["observed"]["accepted_revisions"]
+        rep, fails = run(fx)
+        self.assertTrue(fails)
+        self.assertEqual(rep["selected"], [])
+        self.assertIn(("core:pref-tea-v2", "source_changed_unreconciled"), omitted(rep))
+        self.assertIn(("source_revision_unreconciled", ("src:core",)), unresolved(rep))
+        self.assertIn("src:core", [g["source_id"] for g in rep["gaps"]])
+        status = {i["id"]: i["status"] for i in rep["integrity"]}
+        self.assertEqual(status["src:core"], "changed_unreconciled")
+
+    def test_accepted_revision_must_name_the_observed_hash(self):
+        fx = load("F14")
+        fx["observed"]["accepted_revisions"]["src:core"] = "sha256:fx-core-r99"
+        rep, _ = run(fx)
+        self.assertIn(("core:pref-tea-v2", "source_changed_unreconciled"), omitted(rep))
+
+    def test_accepted_revision_is_reported_as_such(self):
+        rep, fails = run(load("F14"))
+        self.assertEqual(fails, [])
+        self.assertEqual({i["id"]: i["status"] for i in rep["integrity"]}["src:core"], "accepted_revision")
+
+
+class BudgetAndIdentityValidation(unittest.TestCase):
+    """Review finding 3: negative tests."""
+
+    def test_bad_record_token_counts_are_rejected(self):
+        for bad in (-5, 0, True, False, 2.5, "20", None):
+            fx = load("F01")
+            by_id(fx, "core:pref-tea")["tokens"] = bad
+            rep, _ = run(fx)
+            with self.subTest(tokens=bad):
+                self.assertIn(("core:pref-tea", "invalid_record"), omitted(rep))
+                self.assertNotIn("core:pref-tea", [s["id"] for s in rep["selected"]])
+                self.assertGreaterEqual(rep["tokens_used"], 0)
+
+    def test_tokens_of_refuses_bad_values(self):
+        for bad in (-1, True):
+            with self.subTest(tokens=bad), self.assertRaises(ValueError):
+                checker.tokens_of({"tokens": bad, "content": "x"})
+
+    def test_negative_tokens_cannot_buy_budget(self):
+        fx = load("F13a")
+        fx["records"][0]["tokens"] = -100000
+        rep, _ = run(fx)
+        self.assertIn((fx["records"][0]["id"], "invalid_record"), omitted(rep))
+        self.assertLessEqual(rep["tokens_used"],
+                             checker.resolve_manifest(fx["manifest"], FIXTURES)["context_budget_tokens"])
+
+    def test_bad_profile_tokens_and_budget_in_manifest(self):
+        m = json.loads((HERE / "manifest.example.json").read_text(encoding="utf-8"))
+        for bad in (-300, True, 0):
+            mm = copy.deepcopy(m)
+            mm["profiles"][0]["tokens"] = bad
+            mm["context_budget_tokens"] = True if bad is True else mm["context_budget_tokens"]
+            errs = checker.validate_manifest(mm)
+            with self.subTest(tokens=bad):
+                self.assertTrue(any(e.startswith("bad_profile_tokens") for e in errs))
+                if bad is True:
+                    self.assertIn("bad_budget", errs)
+
+    def test_duplicate_record_ids_select_neither_copy(self):
+        fx = load("F01")
+        twin = copy.deepcopy(by_id(fx, "core:pref-tea"))
+        twin["content"] = "Synthetic: a different body under the same ID."
+        fx["records"].append(twin)
+        rep, fails = run(fx)
+        self.assertTrue(fails)
+        self.assertNotIn("core:pref-tea", [s["id"] for s in rep["selected"]])
+        self.assertEqual(omitted(rep).count(("core:pref-tea", "duplicate_record_id")), 2)
+        self.assertIn(("duplicate_record_id", ("core:pref-tea",)), unresolved(rep))
+
+    def test_record_store_must_match_registered_source_store(self):
+        fx = load("F01")
+        by_id(fx, "core:pref-tea")["store"] = "people"  # source src:core is registered as core
+        rep, _ = run(fx)
+        self.assertIn(("core:pref-tea", "store_source_mismatch"), omitted(rep))
+
+    def test_equal_authority_two_way_cycle_resolves_nothing(self):
+        fx = load("F10")
+        by_id(fx, "core:pref-date-fa-v1")["supersedes"] = ["core:pref-date-fa-v2"]
+        rep, fails = run(fx)
+        self.assertTrue(fails)
+        ids = {s["id"]: s for s in rep["selected"]}
+        self.assertIn("core:pref-date-fa-v1", ids)
+        self.assertIn("core:pref-date-fa-v2", ids)
+        self.assertEqual(ids["core:pref-date-fa-v1"]["role"], "contested")
+        self.assertNotIn("pref:date_format", rep["applied"])
+        self.assertIn(("supersession_cycle", ("core:pref-date-fa-v1", "core:pref-date-fa-v2")), unresolved(rep))
+        self.assertFalse(any(h["accepted"] for h in rep["correction_history"]))
+
+    def test_equal_authority_three_way_cycle_resolves_nothing(self):
+        fx = load("F10")
+        nb = by_id(fx, "nb:infer-date-fa")
+        nb["authority"] = "owner_approved"
+        fx["observed"]["authority_attestations"]["nb:infer-date-fa"] = "owner_approved"
+        by_id(fx, "core:pref-date-fa-v1")["supersedes"] = ["nb:infer-date-fa"]
+        nb["supersedes"] = ["core:pref-date-fa-v2"]
+        rep, _ = run(fx)
+        self.assertEqual(len(rep["selected"]), 3)
+        self.assertIn(("supersession_cycle", ("core:pref-date-fa-v1", "core:pref-date-fa-v2", "nb:infer-date-fa")),
+                      unresolved(rep))
+        self.assertEqual(rep["applied"], {})
+
+    def test_unequal_cycle_keeps_the_higher_authority_correction(self):
+        fx = load("F04")
+        by_id(fx, "epi:claim-blocked-terminal")["supersedes"] = ["core:correction-recoverable"]
+        rep, _ = run(fx)
+        self.assertEqual(rep["applied"], {"status:fx-task-7": "core:correction-recoverable"})
+        self.assertNotIn("supersession_cycle", [u["type"] for u in rep["unresolved"]])
 
 
 class ManifestRules(unittest.TestCase):

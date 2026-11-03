@@ -36,7 +36,14 @@
         "readable": true,
         "sha256": "sha256:fx-guardians-v2"
       }
-    }
+    },
+    "authority_attestations": {
+      "core:pref-tea": "owner_approved",
+      "core:pref-greeting": "owner_approved",
+      "nb:note-weather": "ella_observed",
+      "core:pref-restricted": "owner_approved"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
   },
   "query": {
     "topics": [

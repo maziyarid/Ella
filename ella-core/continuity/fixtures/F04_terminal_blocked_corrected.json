@@ -36,7 +36,12 @@
         "readable": true,
         "sha256": "sha256:fx-guardians-v2"
       }
-    }
+    },
+    "authority_attestations": {
+      "epi:claim-blocked-terminal": "ella_observed",
+      "core:correction-recoverable": "owner_approved"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
   },
   "query": {
     "topics": [
