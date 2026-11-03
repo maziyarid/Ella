@@ -30,6 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
+sys.dont_write_bytecode = True  # no cache files next to the source
 sys.path.insert(0, str(_HERE.parent / "ella" / "lib"))
 from pain import SEVERITIES  # noqa: E402  (reuse existing tiers; side-effect free)
 
