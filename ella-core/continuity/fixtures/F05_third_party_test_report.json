@@ -1,0 +1,145 @@
+{
+  "fixture_id": "F05",
+  "title": "Third-party agent reports a successful test: label it reported until evidence is inspected",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "tests"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "epi:report-tp-tests",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "report",
+      "reality": "reported",
+      "authority": "third_party_reported",
+      "recorded_at": "2026-11-02T10:00:00Z",
+      "topics": [
+        "tests"
+      ],
+      "content": "fx-agent reports: lock tests passed (25/25).",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "third_party_agent:fx-agent",
+        "method": "reported",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:report-tp-tests"
+      },
+      "tokens": 20
+    },
+    {
+      "id": "epi:report-tp-with-evidence",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "report",
+      "reality": "reported",
+      "authority": "third_party_reported",
+      "recorded_at": "2026-11-02T11:00:00Z",
+      "topics": [
+        "tests"
+      ],
+      "content": "fx-agent reports: schema tests passed; run log attached.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "third_party_agent:fx-agent",
+        "method": "reported",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:report-tp-with-evidence",
+        "evidence": [
+          {
+            "ref": "fixture://ci/run-88.log",
+            "sha256": "sha256:fx-ci-88",
+            "inspected": true
+          }
+        ]
+      },
+      "tokens": 20
+    },
+    {
+      "id": "nb:claim-confidence-only",
+      "store": "notebook",
+      "source_id": "src:notebook",
+      "kind": "claim",
+      "reality": "inferred",
+      "authority": "ella_inferred",
+      "recorded_at": "2026-11-01T10:00:00Z",
+      "topics": [
+        "tests"
+      ],
+      "content": "All tests pass everywhere.",
+      "privacy": "private",
+      "status": "established",
+      "confidence": 0.99,
+      "tokens": 10
+    }
+  ],
+  "expected": {
+    "selected": [
+      "epi:report-tp-tests",
+      "epi:report-tp-with-evidence"
+    ],
+    "labels": {
+      "epi:report-tp-tests": "reported_unverified",
+      "epi:report-tp-with-evidence": "reported_evidence_located"
+    },
+    "omitted": [
+      {
+        "id": "nb:claim-confidence-only",
+        "reason": "missing_provenance"
+      }
+    ],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "label": "epi:report-tp-tests",
+        "in": [
+          "fact",
+          "event",
+          "reported_evidence_located"
+        ]
+      },
+      {
+        "selected": "nb:claim-confidence-only"
+      }
+    ]
+  }
+}

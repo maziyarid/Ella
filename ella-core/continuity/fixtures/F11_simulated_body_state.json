@@ -1,0 +1,89 @@
+{
+  "fixture_id": "F11",
+  "title": "Simulated body state is present: never describe it as measured human physiology",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "body"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "epi:body-sim-01",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "state_snapshot",
+      "reality": "simulated",
+      "authority": "ella_observed",
+      "recorded_at": "2026-11-03T11:00:00Z",
+      "topics": [
+        "body"
+      ],
+      "content": "Body model snapshot: heart_rate_dial=92, energy_dial=0.4 (simulated values).",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "simulated",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:body-sim-01"
+      },
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "selected": [
+      "epi:body-sim-01"
+    ],
+    "labels": {
+      "epi:body-sim-01": "simulated_state"
+    },
+    "omitted": [],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "label": "epi:body-sim-01",
+        "in": [
+          "fact",
+          "event"
+        ]
+      }
+    ]
+  }
+}

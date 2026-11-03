@@ -68,8 +68,8 @@ Order of operations (deterministic):
 2. Privacy filtering (before anything is assembled). Records above `session_clearance` are omitted as `privacy_filtered`.
 3. Source availability. Records from a missing source cannot appear. Derived entries whose source is missing are `derived_source_unverifiable`.
 4. Staleness. A derived entry whose `built_from.sha256` differs from the source's observed hash is `stale_derived`. Derived entries are never preferred over the authoritative record.
-5. Relevance. Query topics and record topics are normalized and expanded through `term_equivalents`. Records with no overlap are not loaded (counted as `irrelevant_count`).
-6. Supersession and slot resolution (section 3).
+5. Supersession and slot resolution (section 3). This runs before relevance so a correction is found even when only the original matches the query, or the reverse.
+6. Relevance. Query topics and record topics are normalized and expanded through `term_equivalents`. Records with no overlap are not loaded (counted as `irrelevant_count`). Unresolved items and correction history are reported only when they touch a relevant record.
 7. Authority handling. Approvals: expired or environment-mismatched → omitted `expired_authority`; otherwise kept as `historical_authorization_receipt`. `authority_from_memory` is always empty.
 8. Budget. Fill by priority, then authority rank, then recency, then ID. Records dropped for budget are listed as `budget` omissions with `meaningful: true`.
 

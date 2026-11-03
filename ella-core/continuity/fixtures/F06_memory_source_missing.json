@@ -1,0 +1,116 @@
+{
+  "fixture_id": "F06",
+  "title": "Memory source missing: state the gap, do not fabricate its contents",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "tea",
+      "people-summary"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "core:pref-tea",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-02T09:00:00Z",
+      "topics": [
+        "tea"
+      ],
+      "content": "Owner prefers tea without sugar in the afternoon.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-tea"
+      },
+      "slot": "pref:tea",
+      "tokens": 20
+    },
+    {
+      "id": "idx:people-summary",
+      "store": "index",
+      "source_id": "idx:search",
+      "kind": "index_entry",
+      "reality": "observed",
+      "authority": "derived",
+      "recorded_at": "2026-10-25T10:00:00Z",
+      "topics": [
+        "people-summary"
+      ],
+      "content": "Cached people summary (derived).",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "job:indexer",
+        "method": "observed",
+        "source_ref": "fixture://index/search.json#idx:people-summary"
+      },
+      "derived_from": {
+        "source_id": "src:people",
+        "sha256": "sha256:fx-ppl-r3"
+      },
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "selected": [
+      "core:pref-tea"
+    ],
+    "gaps": [
+      "src:people"
+    ],
+    "omitted": [
+      {
+        "id": "idx:people-summary",
+        "reason": "derived_source_unverifiable"
+      }
+    ],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "content_from_source": "fixture://people/"
+      },
+      {
+        "selected": "idx:people-summary"
+      }
+    ]
+  }
+}

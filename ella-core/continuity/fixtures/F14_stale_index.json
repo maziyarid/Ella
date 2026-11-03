@@ -1,0 +1,114 @@
+{
+  "fixture_id": "F14",
+  "title": "Index is stale but authoritative source changed: do not prefer stale derived content",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r13"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "tea"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "core:pref-tea-v2",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-11-02T10:00:00Z",
+      "topics": [
+        "tea"
+      ],
+      "content": "Owner now prefers green tea.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-tea-v2"
+      },
+      "slot": "pref:tea",
+      "tokens": 15
+    },
+    {
+      "id": "idx:tea-summary",
+      "store": "index",
+      "source_id": "idx:search",
+      "kind": "index_entry",
+      "reality": "observed",
+      "authority": "derived",
+      "recorded_at": "2026-10-15T10:00:00Z",
+      "topics": [
+        "tea"
+      ],
+      "content": "Owner prefers black tea (cached summary).",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "job:indexer",
+        "method": "observed",
+        "source_ref": "fixture://index/search.json#idx:tea-summary"
+      },
+      "tokens": 15,
+      "derived_from": {
+        "source_id": "src:core",
+        "sha256": "sha256:fx-core-r12",
+        "record_id": "core:pref-tea-v2"
+      }
+    }
+  ],
+  "expected": {
+    "selected": [
+      "core:pref-tea-v2"
+    ],
+    "omitted": [
+      {
+        "id": "idx:tea-summary",
+        "reason": "stale_derived"
+      }
+    ],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "selected": "idx:tea-summary"
+      }
+    ]
+  }
+}

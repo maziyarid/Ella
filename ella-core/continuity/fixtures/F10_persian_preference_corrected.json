@@ -1,0 +1,168 @@
+{
+  "fixture_id": "F10",
+  "title": "Persian preference corrected later: retrieve and apply the accepted correction",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "تاريخ\u200cها"
+    ],
+    "lang": "fa",
+    "note": "query uses Arabic yeh and U+200C on purpose to exercise normalization"
+  },
+  "records": [
+    {
+      "id": "core:pref-date-fa-v1",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-09-01T10:00:00Z",
+      "topics": [
+        "تاریخ"
+      ],
+      "content": "تاریخ ها رو شمسی بنویس.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-date-fa-v1"
+      },
+      "slot": "pref:date_format",
+      "lang": "fa",
+      "tokens": 15
+    },
+    {
+      "id": "core:pref-date-fa-v2",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "correction",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-10T10:00:00Z",
+      "topics": [
+        "تاریخ"
+      ],
+      "content": "تاریخ ها رو میلادی بنویس و شمسی رو داخل پرانتز بذار.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-date-fa-v2"
+      },
+      "slot": "pref:date_format",
+      "lang": "fa",
+      "supersedes": [
+        "core:pref-date-fa-v1"
+      ],
+      "tokens": 20
+    },
+    {
+      "id": "nb:infer-date-fa",
+      "store": "notebook",
+      "source_id": "src:notebook",
+      "kind": "note",
+      "reality": "inferred",
+      "authority": "ella_inferred",
+      "recorded_at": "2026-11-01T10:00:00Z",
+      "topics": [
+        "تقویم"
+      ],
+      "content": "به نظر میاد فقط شمسی رو ترجیح میده.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "inferred",
+        "source_ref": "fixture://notebook/nb:infer-date-fa"
+      },
+      "slot": "pref:date_format",
+      "lang": "fa",
+      "tokens": 15
+    }
+  ],
+  "expected": {
+    "selected": [
+      "core:pref-date-fa-v2",
+      "nb:infer-date-fa"
+    ],
+    "applied": {
+      "pref:date_format": "core:pref-date-fa-v2"
+    },
+    "labels": {
+      "core:pref-date-fa-v2": "fact",
+      "nb:infer-date-fa": "inference"
+    },
+    "omitted": [
+      {
+        "id": "core:pref-date-fa-v1",
+        "reason": "superseded"
+      }
+    ],
+    "unresolved": [
+      {
+        "type": "slot_conflict",
+        "ids": [
+          "core:pref-date-fa-v2",
+          "nb:infer-date-fa"
+        ]
+      }
+    ],
+    "correction_history": [
+      {
+        "superseded": "core:pref-date-fa-v1",
+        "by": "core:pref-date-fa-v2",
+        "accepted": true
+      }
+    ],
+    "forbidden": [
+      {
+        "applied": "nb:infer-date-fa"
+      },
+      {
+        "applied": "core:pref-date-fa-v1"
+      },
+      {
+        "selected": "core:pref-date-fa-v1"
+      }
+    ]
+  }
+}

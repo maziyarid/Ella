@@ -1,0 +1,110 @@
+{
+  "fixture_id": "F03",
+  "title": "Previous provisioning succeeded, account now absent: do not claim the environment is ready",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    },
+    "fresh_checks": {
+      "account:ella": false,
+      "path:/home/ella/memory": false,
+      "interpreter:python3": true,
+      "network:offline-ok": true
+    }
+  },
+  "query": {
+    "topics": [
+      "provisioning"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "epi:receipt-provision",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "receipt",
+      "reality": "observed",
+      "authority": "ella_observed",
+      "recorded_at": "2026-10-30T10:00:00Z",
+      "topics": [
+        "provisioning",
+        "account"
+      ],
+      "content": "Provisioning receipt: account ella created on fx-host, boot fx-boot-0001, ok=true.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "observed",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:receipt-provision"
+      },
+      "tokens": 30
+    }
+  ],
+  "expected": {
+    "selected": [
+      "epi:receipt-provision"
+    ],
+    "labels": {
+      "epi:receipt-provision": "historical_environment_receipt"
+    },
+    "omitted": [],
+    "unresolved": [],
+    "environment_ready": false,
+    "capabilities": {
+      "account:ella": "failed_now",
+      "path:/home/ella/memory": "failed_now",
+      "interpreter:python3": "verified_now",
+      "network:offline-ok": "verified_now"
+    },
+    "forbidden": [
+      {
+        "environment_ready": true
+      },
+      {
+        "capability": "account:ella",
+        "status": "verified_now"
+      },
+      {
+        "label": "epi:receipt-provision",
+        "in": [
+          "fact",
+          "event"
+        ]
+      }
+    ]
+  }
+}

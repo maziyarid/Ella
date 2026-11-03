@@ -1,0 +1,157 @@
+{
+  "fixture_id": "F09",
+  "title": "Two people have similar names: do not merge records without resolution",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "karimi"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "ppl:p-001",
+      "store": "people",
+      "source_id": "src:people",
+      "kind": "person",
+      "reality": "stated",
+      "authority": "owner_stated",
+      "recorded_at": "2026-10-10T10:00:00Z",
+      "topics": [
+        "karimi"
+      ],
+      "content": "Sara Karimi: fixture colleague, prefers email.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://people/ppl:p-001"
+      },
+      "person_id": "person:fx-001",
+      "name": "Sara Karimi",
+      "tokens": 20
+    },
+    {
+      "id": "ppl:p-002",
+      "store": "people",
+      "source_id": "src:people",
+      "kind": "person",
+      "reality": "stated",
+      "authority": "owner_stated",
+      "recorded_at": "2026-10-12T10:00:00Z",
+      "topics": [
+        "karimi"
+      ],
+      "content": "Sarah Karimi: fixture neighbour, prefers phone calls.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://people/ppl:p-002"
+      },
+      "person_id": "person:fx-002",
+      "name": "Sarah Karimi",
+      "tokens": 20
+    },
+    {
+      "id": "epi:mention-01",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "event",
+      "reality": "observed",
+      "authority": "ella_observed",
+      "recorded_at": "2026-11-01T10:00:00Z",
+      "topics": [
+        "karimi"
+      ],
+      "content": "Ms. Karimi called about the fixture schedule.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "observed",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:mention-01"
+      },
+      "mentions": [
+        {
+          "name": "Karimi"
+        }
+      ],
+      "tokens": 15
+    }
+  ],
+  "expected": {
+    "selected": [
+      "ppl:p-001",
+      "ppl:p-002",
+      "epi:mention-01"
+    ],
+    "omitted": [],
+    "unresolved": [
+      {
+        "type": "possible_duplicate_person",
+        "ids": [
+          "person:fx-001",
+          "person:fx-002"
+        ]
+      },
+      {
+        "type": "ambiguous_person_reference",
+        "ids": [
+          "epi:mention-01",
+          "person:fx-001",
+          "person:fx-002"
+        ]
+      }
+    ],
+    "flags": {
+      "epi:mention-01": "person_unresolved"
+    },
+    "forbidden": [
+      {
+        "merged_people": [
+          "person:fx-001",
+          "person:fx-002"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "fixture_id": "F15",
+  "title": "Manifest with a credential field, a fifth authoritative store and a blanket grant is rejected",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json",
+    "memory_sources": [
+      {
+        "id": "src:core",
+        "store": "core",
+        "ref": "fixture://MEMORY.md",
+        "revision": "r12",
+        "checkpoint": "ck-0012",
+        "sha256": "sha256:fx-core-r12"
+      },
+      {
+        "id": "src:emotions",
+        "store": "emotional",
+        "ref": "fixture://emotional/",
+        "revision": "r1",
+        "checkpoint": "ck-1",
+        "sha256": "sha256:fx-emo-r1"
+      }
+    ],
+    "vault": {
+      "api_key": "fixture-not-a-real-key"
+    },
+    "execution_grant": "*"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "tea"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "core:pref-tea",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-02T09:00:00Z",
+      "topics": [
+        "tea"
+      ],
+      "content": "Owner prefers tea without sugar in the afternoon.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-tea"
+      },
+      "slot": "pref:tea",
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "boot_status": "invalid_manifest",
+    "selected": [],
+    "manifest_errors_include": [
+      "fifth_store_not_allowed",
+      "forbidden_secret_field",
+      "blanket_grant"
+    ],
+    "forbidden": [
+      {
+        "boot_status": "ok"
+      }
+    ]
+  }
+}

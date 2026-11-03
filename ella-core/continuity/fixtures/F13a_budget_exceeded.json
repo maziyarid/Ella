@@ -1,0 +1,153 @@
+{
+  "fixture_id": "F13a",
+  "title": "Context budget is exceeded: follow declared priority and report meaningful omissions",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json",
+    "context_budget_tokens": 700
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    }
+  },
+  "query": {
+    "topics": [
+      "project-x"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "core:pref-a",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-01T10:00:00Z",
+      "topics": [
+        "project-x"
+      ],
+      "content": "Core preference A.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-a"
+      },
+      "tokens": 100
+    },
+    {
+      "id": "ppl:p-a",
+      "store": "people",
+      "source_id": "src:people",
+      "kind": "person",
+      "reality": "stated",
+      "authority": "owner_stated",
+      "recorded_at": "2026-10-02T10:00:00Z",
+      "topics": [
+        "project-x"
+      ],
+      "content": "Person A works on project-x.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://people/ppl:p-a"
+      },
+      "tokens": 80
+    },
+    {
+      "id": "epi:e-1",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "event",
+      "reality": "observed",
+      "authority": "ella_observed",
+      "recorded_at": "2026-11-02T10:00:00Z",
+      "topics": [
+        "project-x"
+      ],
+      "content": "Long recent event.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "observed",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:e-1"
+      },
+      "tokens": 150
+    },
+    {
+      "id": "epi:e-2",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "event",
+      "reality": "observed",
+      "authority": "ella_observed",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "topics": [
+        "project-x"
+      ],
+      "content": "Short older event.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "observed",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:e-2"
+      },
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "selected": [
+      "core:pref-a",
+      "ppl:p-a",
+      "epi:e-2"
+    ],
+    "omitted": [
+      {
+        "id": "epi:e-1",
+        "reason": "budget"
+      }
+    ],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "selected": "epi:e-1"
+      }
+    ]
+  }
+}
