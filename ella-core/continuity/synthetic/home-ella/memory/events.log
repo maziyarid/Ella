@@ -1,0 +1,2 @@
+2026-10-30 legacy memory log line (synthetic)
+{"id":"legacy:tea","kind":"fact","reality":"stated","authority":"owner_approved","recorded_at":"2026-10-20T09:00:00Z","topics":["tea"],"content":"Synthetic legacy: prefers black tea.","provenance":{"recorded_by":"owner","method":"stated","source_ref":"claimed://by-record"},"slot":"pref:tea"}

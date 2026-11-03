@@ -218,6 +218,14 @@ class AuthorityIsNotSelfAsserted(unittest.TestCase):
         sel = {s["id"]: s for s in rep["selected"]}
         self.assertIn("authority_unattested", sel["core:correction-recoverable"]["flags"])
 
+    def test_sole_unattested_record_in_a_slot_is_not_applied(self):
+        fx = load("F01")
+        fx["observed"]["authority_attestations"].pop("core:pref-tea")
+        rep, fails = run(fx)
+        self.assertTrue(fails)
+        self.assertNotIn("pref:tea", rep["applied"])
+        self.assertIn(("slot_without_attested_authority", ("core:pref-tea",)), unresolved(rep))
+
     def test_attestation_can_lower_but_never_raise_a_claim(self):
         fx = load("F04")
         fx["observed"]["authority_attestations"]["epi:claim-blocked-terminal"] = "owner_approved"

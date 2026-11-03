@@ -1,0 +1,210 @@
+{
+  "contract": "ella-continuity-bootstrap",
+  "contract_version": "0.1.0",
+  "synthetic": true,
+  "generated_at": "2026-11-03T08:00:00Z",
+  "code_sources": [
+    {
+      "repo": "maziyarid/Ella",
+      "sha": "8269aa19844c03e38848222acfd58154896e6498"
+    },
+    {
+      "repo": "maziyarid/Ella-Brain",
+      "sha": "cea47fabecd1eb3ac4d5c2427afa2d09e2f98868"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile:identity",
+      "ref": "profiles/identity.md",
+      "version": "v1",
+      "sha256": "sha256:ff4fd2e4727d30f791ffcf4593696adcc530b57a1cfec3a17aa09c3c282e3d69",
+      "approval": {
+        "by": "owner",
+        "at": "2026-10-01T09:00:00Z",
+        "record_ref": "core:approval-identity-v3"
+      },
+      "tokens": 300
+    },
+    {
+      "id": "profile:guardians",
+      "ref": "profiles/guardians.md",
+      "version": "v1",
+      "sha256": "sha256:974399da6541fae58501a713558a9f1d4d8ab651248d1be094fcc2f0d60aaac9",
+      "approval": {
+        "by": "owner",
+        "at": "2026-10-01T09:00:00Z",
+        "record_ref": "core:approval-guardians-v2"
+      },
+      "tokens": 200
+    }
+  ],
+  "memory_sources": [
+    {
+      "id": "src:core",
+      "store": "core",
+      "ref": "memory/MEMORY.md",
+      "revision": "r1",
+      "checkpoint": "ck-1",
+      "sha256": "sha256:22b268741bb1f9f7db1b42fd80e4d0a1d9362decfea7cf4f9a7575fa4fa5473d"
+    },
+    {
+      "id": "src:episodic",
+      "store": "episodic",
+      "ref": "diary/",
+      "revision": "r1",
+      "checkpoint": "ck-1",
+      "sha256": "sha256:eb2bc8a6b8b19923d61d2dce6c3fe04c0b474149749a38b612bf5490e890e197"
+    },
+    {
+      "id": "src:notebook",
+      "store": "notebook",
+      "ref": "memory/notebook/",
+      "revision": "r1",
+      "checkpoint": "ck-1",
+      "sha256": "sha256:e1b57f6107d4a6fb68ddd624ebd1e5949ccf589ce803eefce0551b39266b575b"
+    },
+    {
+      "id": "src:people",
+      "store": "people",
+      "ref": "memory/people/",
+      "revision": "r1",
+      "checkpoint": "ck-1",
+      "sha256": "sha256:49ea6f7409738d625126988f6768b5b81d45a13ab32d161eda8fb35c05220556"
+    }
+  ],
+  "derived_indexes": [],
+  "load_order": [
+    {
+      "priority": "P0",
+      "stores": [
+        "profiles"
+      ],
+      "never_drop": true
+    },
+    {
+      "priority": "P1",
+      "stores": [
+        "core"
+      ]
+    },
+    {
+      "priority": "P2",
+      "stores": [
+        "people",
+        "notebook"
+      ]
+    },
+    {
+      "priority": "P3",
+      "stores": [
+        "episodic",
+        "index"
+      ]
+    }
+  ],
+  "context_budget_tokens": 2500,
+  "unresolved_questions": [
+    {
+      "id": "uq:live-record-format",
+      "question": "The live record format under memory/ and diary/ is unobserved. The ella-record fence and JSONL are synthetic proposals.",
+      "refs": [
+        "ADAPTER.md"
+      ]
+    }
+  ],
+  "supersession": {
+    "authority_order": [
+      "owner_approved",
+      "owner_stated",
+      "ella_observed",
+      "ella_inferred",
+      "third_party_reported"
+    ],
+    "requires_explicit_link": true,
+    "newer_requires_equal_or_higher_authority": true,
+    "superseded_records_kept_in_history": true
+  },
+  "term_equivalents": {
+    "date_format": [
+      "date",
+      "dates",
+      "calendar",
+      "تاریخ",
+      "تقویم"
+    ],
+    "tea": [
+      "چای",
+      "چایی"
+    ],
+    "greeting": [
+      "سلام",
+      "احوالپرسی"
+    ]
+  },
+  "environment_checks": [
+    {
+      "capability": "copy_path:memory",
+      "check": "adapter: path exists under the copy root"
+    },
+    {
+      "capability": "copy_path:diary",
+      "check": "adapter: path exists under the copy root"
+    },
+    {
+      "capability": "account:ella",
+      "check": "not checkable from a copy; stays unverified",
+      "prior_receipt": {
+        "hostname": "fx-host",
+        "boot_id": "fx-boot-old",
+        "observed_at": "2026-10-25T12:42:00Z",
+        "ok": true
+      }
+    }
+  ],
+  "expiring_authority": [
+    {
+      "record_ref": "epi:approval-push-01",
+      "action": "git_push",
+      "target": "fixture/repo",
+      "binding": "payload_sha256+expires_at+boot_id"
+    }
+  ],
+  "privacy": {
+    "classification": "private",
+    "session_clearance": "private",
+    "export_allowed": false
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "results_at_generation": "all_match"
+  },
+  "layout": {
+    "discovered_from": "ella-core/native-adaos/setup-adaos-native.sh step 2 (models memory diary ella-core backups) and ella-backup.sh (memory diary ella-core)",
+    "authorized_roots": [
+      "memory",
+      "diary",
+      "profiles",
+      ".ollama/history"
+    ],
+    "never_read": [
+      "models",
+      "backups",
+      "ella-core",
+      ".ella-backup-env"
+    ],
+    "episodic_stream": "diary/",
+    "legacy_inputs": [
+      {
+        "id": "legacy:memory-log",
+        "ref": "memory/events.log",
+        "kind": "memory_log"
+      },
+      {
+        "id": "legacy:ollama-repl-history",
+        "ref": ".ollama/history",
+        "kind": "ollama_repl_history"
+      }
+    ]
+  }
+}

@@ -275,7 +275,8 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
             status = "missing"
             report["gaps"].append({"source_id": src["id"], "store": src["store"],
                                    "severity": "degraded",
-                                   "note": "source missing or unreadable; contents not inferred"})
+                                   "reason": (obs or {}).get("reason", "missing"),
+                                   "note": "source missing, unreadable, ambiguous or unauthorized; contents not inferred"})
         else:
             source_hash[src["id"]] = obs.get("sha256")
             accepted = (observed.get("accepted_revisions") or {}).get(src["id"])
@@ -488,6 +489,12 @@ def assemble(fixture: dict, base_dir: Path) -> dict:
     for slot, ids in sorted(slots.items()):
         top = max(rank[i] for i in ids)
         tops = [i for i in ids if rank[i] == top]
+        if all(effective[i] == UNATTESTED for i in tops):
+            # Nothing in this slot has attested authority, so nothing is applied.
+            unresolved.append({"type": "slot_without_attested_authority", "ids": sorted(ids)})
+            if len(ids) > 1:
+                contested |= set(ids)
+            continue
         if len(tops) == 1:
             report["applied"][slot] = tops[0]
             contested |= set(ids) - set(tops)
