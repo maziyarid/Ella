@@ -1,0 +1,59 @@
+{
+  "contract": "ella-continuity-bootstrap",
+  "contract_version": "0.1.0",
+  "synthetic": true,
+  "generated_at": "2026-11-03T08:00:00Z",
+  "code_sources": [
+    {"repo": "maziyarid/Ella", "sha": "8269aa19844c03e38848222acfd58154896e6498"},
+    {"repo": "maziyarid/Ella-Brain", "sha": "cea47fabecd1eb3ac4d5c2427afa2d09e2f98868"}
+  ],
+  "profiles": [
+    {"id": "profile:identity", "ref": "fixture://profiles/identity.md", "version": "v3", "sha256": "sha256:fx-identity-v3",
+     "approval": {"by": "owner", "at": "2026-10-01T09:00:00Z", "record_ref": "core:approval-identity-v3"}, "tokens": 300},
+    {"id": "profile:guardians", "ref": "fixture://profiles/guardians.md", "version": "v2", "sha256": "sha256:fx-guardians-v2",
+     "approval": {"by": "owner", "at": "2026-10-01T09:00:00Z", "record_ref": "core:approval-guardians-v2"}, "tokens": 200}
+  ],
+  "memory_sources": [
+    {"id": "src:core", "store": "core", "ref": "fixture://MEMORY.md", "revision": "r12", "checkpoint": "ck-0012", "sha256": "sha256:fx-core-r12"},
+    {"id": "src:episodic", "store": "episodic", "ref": "fixture://episodic/2026-11.jsonl", "revision": "r40", "checkpoint": "ck-0040", "sha256": "sha256:fx-epi-r40"},
+    {"id": "src:notebook", "store": "notebook", "ref": "fixture://notebook/", "revision": "r7", "checkpoint": "ck-0007", "sha256": "sha256:fx-nb-r7"},
+    {"id": "src:people", "store": "people", "ref": "fixture://people/", "revision": "r3", "checkpoint": "ck-0003", "sha256": "sha256:fx-ppl-r3"}
+  ],
+  "derived_indexes": [
+    {"id": "idx:search", "ref": "fixture://index/search.json", "authoritative": false,
+     "built_from": {"source_id": "src:core", "sha256": "sha256:fx-core-r12"}}
+  ],
+  "load_order": [
+    {"priority": "P0", "stores": ["profiles"], "never_drop": true},
+    {"priority": "P1", "stores": ["core"]},
+    {"priority": "P2", "stores": ["people", "notebook"]},
+    {"priority": "P3", "stores": ["episodic", "index"]}
+  ],
+  "context_budget_tokens": 2500,
+  "unresolved_questions": [
+    {"id": "uq:episodic-vs-memory-log", "question": "Is diary/ the single episodic stream, or does memory/ hold a second log?", "refs": ["DECISIONS.md#D2"]}
+  ],
+  "supersession": {
+    "authority_order": ["owner_approved", "owner_stated", "ella_observed", "ella_inferred", "third_party_reported"],
+    "requires_explicit_link": true,
+    "newer_requires_equal_or_higher_authority": true,
+    "superseded_records_kept_in_history": true
+  },
+  "term_equivalents": {
+    "date_format": ["date", "dates", "calendar", "تاریخ", "تقویم"],
+    "tea": ["چای", "چایی"],
+    "greeting": ["سلام", "احوالپرسی"]
+  },
+  "environment_checks": [
+    {"capability": "account:ella", "check": "getent passwd ella",
+     "prior_receipt": {"hostname": "fx-host", "boot_id": "fx-boot-0001", "observed_at": "2026-10-30T10:00:00Z", "ok": true}},
+    {"capability": "path:/home/ella/memory", "check": "test -r /home/ella/memory"},
+    {"capability": "interpreter:python3", "check": "python3 --version"},
+    {"capability": "network:offline-ok", "check": "no network required"}
+  ],
+  "expiring_authority": [
+    {"record_ref": "epi:approval-push-01", "action": "git_push", "target": "fixture/repo", "binding": "payload_sha256+expires_at+boot_id"}
+  ],
+  "privacy": {"classification": "private", "session_clearance": "private", "export_allowed": false},
+  "integrity": {"algorithm": "sha256", "results_at_generation": "all_match"}
+}
