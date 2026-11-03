@@ -9,10 +9,30 @@ This document classifies what exists. It does not turn README claims into verifi
 | Repository | Ref | Full commit SHA |
 |---|---|---|
 | `maziyarid/Ella` | `main` (base of this branch) | `8269aa19844c03e38848222acfd58154896e6498` |
-| `maziyarid/Ella-Brain` | `main` | `cea47fabecd1eb3ac4d5c2427afa2d09e2f98868` |
-| `maziyarid/Ella-Brain` | `feat/persian-voice-preview` (voice lane, listed only, not touched) | `dc5a4f9ed00bd46b1c5682aec1a9c85da6847cf0` |
+| `maziyarid/Ella-Brain` | `main`, **current baseline** (last independently confirmed by Maziyar; re-inspected 2026-11-03) | `9132753e4be980c75269be6de2658134e4960208` |
+| `maziyarid/Ella-Brain` | `main`, **historical inspection baseline** (first inspection) | `cea47fabecd1eb3ac4d5c2427afa2d09e2f98868` |
+| `maziyarid/Ella-Brain` | `feat/persian-voice-preview` (voice lane, listed only, not inspected or touched) | `0f3a5f8cacfd2429b18e25b0eccf1d08fb378a56` at re-inspection (was `dc5a4f9ed00bd46b1c5682aec1a9c85da6847cf0`) |
 
-Key blob SHAs (git object IDs at the commits above):
+### Re-inspection against Ella-Brain `9132753`
+
+`9132753` is the merge of Ella-Brain PR #1 (hardening: no-overwrite publication and lock-acquisition timeout) on top of `cea47fa`.
+Read only. No hardening code was modified.
+
+| Interface the continuity lane depends on | `cea47fa` → `9132753` |
+|---|---|
+| `ella_brain/__init__.py` (public `get`, `mutate`, stage functions, exported errors) | byte-identical |
+| `models.py` (closed `Task`/`Agent` schemas, `Status` with a single `blocked`) | byte-identical (`1c1e6f7…`) |
+| `gate.py`, `errors.py`, `pipeline.py`, `domains.py`, `_critics.py`, `README.md`, `pyproject.toml` | byte-identical |
+| `_io.py` (`0566d04…`) | `atomic_write` now publishes with `os.link` and raises `VerificationError("refusing to overwrite …")` instead of replacing |
+| `_stages.py` (`01b02bb…`) | the cross-process store lock now times out after 5 s and raises `MutationRejected("store lock acquisition timed out; no entity mutation applied")` |
+| tests | +17 (`test_atomic_write.py`, `test_combined_hardening.py`, `test_lock_timeout.py`); suite 55 |
+
+Effect on this lane: none on its code. The checker, adapter and inventory do not import or call Ella-Brain. For any
+future caller that records continuity diagnostics through `mutate`, two refusals are now explicit and must be handled as
+"not applied": a lock timeout (`MutationRejected`) and a refused overwrite (`VerificationError`). D4 is unchanged:
+`blocked` is still a single status, and continuity diagnostics stay outside the Task schema.
+
+Key blob SHAs (git object IDs at the first-inspection commits; the `9132753` values for changed files are in the table above):
 
 | Blob | Path |
 |---|---|
@@ -93,6 +113,7 @@ All runs were offline, in a disposable sandbox clone. Nothing ran on Ella's mach
 | Test | Command | Result |
 |---|---|---|
 | Ella-Brain full suite at `cea47fa` | `python -m pytest -q` (Python 3.14.8, pydantic 2) | 38 passed |
+| Ella-Brain full suite at `9132753` (detached worktree, import path confirmed to be the worktree) | `python -B -m pytest -q -p no:cacheprovider` | 55 passed |
 | Qalam gate at `8269aa1` | `python3 ella-core/phase0/check_qalam.py` | `checked 6966 samples` · `QALAM GATE PASSED` |
 | Repository visibility | `gh repo view` + anonymous HTTP fetch of both repo pages | Both repositories are PUBLIC; anonymous fetch returned HTTP 200 with file listings |
 | Continuity checker (this lane) | see `README.md` | see `README.md` |
@@ -102,6 +123,6 @@ All runs were offline, in a disposable sandbox clone. Nothing ran on Ella's mach
 1. Privacy claim vs actual visibility. `ella-core/README.md` says "Private repo; do not make public", and the native AdaOS plan calls it "Private GitHub". GitHub reports `maziyarid/Ella` as PUBLIC, and an anonymous fetch returned the file tree. This lane did not change visibility. It publishes only synthetic material. See `DECISIONS.md` D1.
 2. Symlinks vs copies. `ella/README.md`, `00_KERNEL/README.md` and `GOVERNOR.md` say `ella/lib/` holds symlinks. `ella-core/README.md` says they were copied on 2026-10-25. The files in the tree are regular files, byte-identical to the prototype. The docs are stale; no behavioral impact.
 3. Memory layout. Architecture map v0.1 puts episodic, semantic, procedural and autobiographical material in separate physical folders. The `03_MEMORY` supervisor routes into those same four. The agreed four authoritative stores are core `MEMORY.md`, one episodic stream, Notebook and People files. The agreement itself is not recorded in either repository (`00_GOVERNANCE/ELLA_DECISION_LOG.md` is 0 bytes). See `RECONCILIATION.md`.
-4. Lock hardening slice. Ella reported "functionally verified, unpublished: 25 focused tests, 47 full-suite". At first inspection no branch carried it; `main` has 38 tests. Update 2026-11-03: it is now published as Ella-Brain PR #1, `hardening/combined-no-overwrite-lock-timeout` at `d01d1f15f0048d3a5874b59fb6c0759e508c6539`. Listed only; its test counts were not run or inspected by this lane. Owned by the integration lane, and it does not block this lane.
+4. Lock hardening slice. Ella reported "functionally verified, unpublished: 25 focused tests, 47 full-suite". At first inspection no branch carried it; `main` has 38 tests. Update 2026-11-03: it was published as Ella-Brain PR #1 (`d01d1f1`) and is now merged into `main` as `9132753`. At `9132753` this lane ran the full suite: 55 passed, 17 of them in the three new hardening test files. Those counts differ from the reported "25 focused / 47 full-suite"; this lane records what it ran and does not reconcile the difference. Owned by the integration lane, and it does not block this lane.
 5. Decision authority location. `ella-core/README.md` says decisions live in DotCollab (#31, #32–#41), not in the repository. This lane cannot verify those decisions from source.
 6. Recoverable blocked. The restart cases need "recoverable blocked" versus "terminal blocked". Ella-Brain's closed `Status` enum has only `blocked`, and this lane must not change it. The checker keeps that distinction in its own report vocabulary only.

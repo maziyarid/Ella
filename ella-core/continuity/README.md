@@ -23,12 +23,14 @@ modify Ella-Brain (`_io.py`, `_stages.py`, their tests, the Task/Agent schema or
 | `adapter.py` | Read-only adapter: synthetic copy of the discovered `/home/ella` layout → checker. See `ADAPTER.md` |
 | `ADAPTER.md` | Runtime as intended by source vs recorded as completed vs unknown; read ownership; integration boundary; next blocker |
 | `synthetic/` | Synthetic copy (`home-ella/`), its manifest and an attestation file kept outside the memory root |
-| `test_adapter.py` | 27 adapter-to-checker tests (altered bytes, forged authority, missing files, D2, unauthorized paths, fresh-process restart, boundary-is-not-evidence) |
+| `test_adapter.py` | 35 adapter-to-checker tests (altered bytes, forged authority, missing files, D2, unauthorized paths, fresh-process restart, unsigned file grants no owner level, signed-register CLI path) |
 | `inventory.py` | Read-only layout inventory of `/home/ella/memory` and `/home/ella/diary` for Maziyar to run locally: sizes and sha256, no contents, no symlinks followed. Prepared, **not run** on the PC |
-| `test_inventory.py` | 20 tests on invented temporary trees (missing/inaccessible targets, symlinks, FIFOs, changes during read, no content or names in the summary) |
+| `test_inventory.py` | 31 tests on invented temporary trees (other filesystems not entered, open flags, missing/inaccessible targets, symlinks, FIFOs, swaps between stat and open, changes during read, undecodable names, depth limit, two-pass compare, no content or names in the summary) |
 | `LIVE_INVENTORY_PROCEDURE.md` | Steps for the local run, private vs shareable outputs, and the minimum format information needed afterwards |
-| `ATTESTATION.md` | Owner-controlled attestation workflow (signed append-only register, exact-byte binding, withdrawal, replacement). Specified, not implemented |
-| `DECISIONS.md` | Decision register: one open owner decision (D1) and the recorded lane directions |
+| `ATTESTATION.md` | Owner attestation workflow: signed append-only register, exact-byte binding, withdrawal, replacement, conflicts, and the rollback anchor with its limits. Signing key not decided (D6) |
+| `attest_verify.py` | Isolated register verifier: gpg in a temporary home holding only the supplied public key; requires a configured trusted fingerprint; fails closed. **Tested with disposable keys only** |
+| `test_attest_verify.py` | 37 tests: wrong signer, subkey fingerprint not accepted as a pin, edited or forged result dicts, missing/garbage/altered signatures, subkeys, expired key, malformed and conflicting entries, withdrawal, replacement, rollback/fork against the anchor, missing or failing tooling |
+| `DECISIONS.md` | Decision register: D1 decided for this work period (temporarily public); open: D6 signing key, D7 local inventory run; recorded lane directions |
 
 ## Fixture coverage
 
@@ -58,15 +60,16 @@ personality authenticity or general intelligence.
 
 ## Exact verification
 
-Requires Python 3.10+ and nothing else. From a checkout of this branch:
+Requires Python 3.10+. `test_attest_verify` and the signed-register tests in `test_adapter` also need GnuPG 2.2+ (`gpg`); they skip without it. From a checkout of this branch:
 
 ```bash
 cd ella-core/continuity
 python3 -B checker.py fixtures/                      # expect: 16/16 fixtures passed, exit 0
 python3 -B checker.py --manifest manifest.example.json   # expect: "valid": true
 python3 -B -m unittest -v test_checker               # expect: Ran 40 tests ... OK
-python3 -B -m unittest -v test_adapter               # expect: Ran 27 tests ... OK
-python3 -B -m unittest -v test_inventory             # expect: Ran 20 tests ... OK
+python3 -B -m unittest -v test_adapter               # expect: Ran 35 tests ... OK
+python3 -B -m unittest -v test_inventory             # expect: Ran 31 tests ... OK
+python3 -B -m unittest -v test_attest_verify         # expect: Ran 37 tests ... OK
 python3 -B checker.py fixtures/F10_persian_preference_corrected.json --report   # structured report
 ```
 
@@ -84,9 +87,9 @@ classes `AuthorityIsNotSelfAsserted`, `ChangedSourcesAreNotSilentlyTrusted`, `Bu
 2. A changed source hash still fed the pool. Now: `changed_unreconciled` holds records back unless an accepted revision names the exact new hash.
 3. Negative/boolean token counts, duplicate IDs, record/source store mismatch and equal-authority supersession cycles were not rejected. Now they are.
 
-These rules make the harness stricter. They do not make it a live loader. A live adapter still has to produce the
-`observed` channel from real reads, current-boot checks and accepted decision records (`CONTRACT.md` section 0), and
-that adapter does not exist yet.
+These rules make the harness stricter. They do not make it a live loader. `adapter.py` now produces the `observed`
+channel from bytes it reads, but only from marked synthetic copies; `/home/ella` is refused. Owner levels come only from
+a register verified by `attest_verify.py` against a configured fingerprint, and no real register or signer exists.
 
 ## Deterministic checks vs language-model evaluation
 
@@ -96,17 +99,20 @@ writes Qalam-clean Persian. They would call a provider model and need separate a
 
 ## Report (lane v0.1)
 
-Source SHAs inspected: Ella `8269aa19844c03e38848222acfd58154896e6498`; Ella-Brain `cea47fabecd1eb3ac4d5c2427afa2d09e2f98868`;
-voice branch `dc5a4f9ed00bd46b1c5682aec1a9c85da6847cf0` listed only. Blob SHAs are in `INVENTORY.md`.
+Source SHAs inspected: Ella `8269aa19844c03e38848222acfd58154896e6498`; Ella-Brain current baseline `9132753e4be980c75269be6de2658134e4960208`
+(historical inspection baseline `cea47fabecd1eb3ac4d5c2427afa2d09e2f98868`); voice branch listed only. Blob SHAs and the re-inspection are in `INVENTORY.md`.
 
 Existing code reused: `ella/lib/pain.py` severity tiers (gap severities); the `03_MEMORY` supervisor rule that retrieval misses emit
 `degraded`; the Qalam U+200C rule from `phase0/check_qalam.py` (fixture text is checked for it); the convergence-analysis decisions
 (files canonical, indexes rebuildable, P0 never dropped, fail loudly, hash-bound approvals, no silent overwrite). No memory runtime
 existed to extend, so the checker is a side-effect-free reader, not a new store or write path.
 
-Tests actually run (disposable sandbox, offline, Python 3.14.8): Ella-Brain `main` suite, 38 passed; `check_qalam.py`, 6966 samples passed;
-`checker.py fixtures/`, 16/16; `test_checker` 40, `test_adapter` 27 and `test_inventory` 20 passed (87 total, unittest and pytest). These are **synthetic verification** of the code's own rules. They are not evidence of compatibility with live memory, whose layout and format have not been observed. Nothing ran on Ella's machines or production.
+Tests actually run (disposable sandbox, offline, Python 3.14.8, GnuPG 2.4.8): Ella-Brain suite 38 passed at `cea47fa` and 55 passed at `9132753`;
+`check_qalam.py`, 6966 samples passed; `checker.py fixtures/`, 16/16; `test_checker` 40, `test_adapter` 35, `test_inventory` 31 and
+`test_attest_verify` 37 passed (143 total under unittest; pytest 143 passed, 119 subtests). These are **synthetic verification** of the code's own rules with
+invented records and disposable keys. They are not evidence of compatibility with live memory, and they do not verify any real
+signature. Nothing ran on Ella's machines or production.
 
-Not verified: the four-store agreement itself (not recorded in either repository); the live layout of `/home/ella` (`diary/` vs `memory/`);
-any real memory contents; the unpublished lock-hardening slice (25/47 tests, reported only); the Phase 1–2 traces (provider-backed, not re-run);
-language-model behavior with the assembled context.
+Not verified: the four-store agreement itself (not recorded in either repository); the live layout and format of `/home/ella`;
+any real memory contents; any real signing key or register; rollback resistance beyond the anchor check (anchor storage is a design
+requirement); the Phase 1–2 traces (provider-backed, not re-run); language-model behavior with the assembled context.

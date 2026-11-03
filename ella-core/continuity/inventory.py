@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ella memory-layout inventory v0.1 — local, read-only, for Maziyar to review and run.
 
-Two subcommands:
+Subcommands:
 
   scan       Inspects exactly /home/ella/memory and /home/ella/diary. Prints a PRIVATE
              inventory (relative paths, types, sizes, sha256) as JSON on stdout.
@@ -9,15 +9,17 @@ Two subcommands:
   summarize  Reads a private inventory file and prints a SANITIZED summary
              (counts, size buckets, extension counts, aggregate hashes). No names,
              no paths, no per-file hashes, no times.
+  compare    Compares two private inventories and prints counts only (changed, added,
+             removed). Run scan twice to catch changes that timestamps can miss.
 
 The private inventory stays on the PC. Only the summary is meant to be shared, after review.
 This script has no network code, starts nothing and writes nothing. The caller's shell
 redirect is the only thing that creates a file.
 
 Suggested use (see LIVE_INVENTORY_PROCEDURE.md):
-    umask 077; mkdir -p ~/ella-inventory-private
-    sudo -u ella python3 -I -B - scan < inventory.py > ~/ella-inventory-private/inventory.json
-    python3 -I -B inventory.py summarize ~/ella-inventory-private/inventory.json > ~/ella-inventory-private/summary.json
+    set -C; umask 077; D=~/ella-inventory-$(date -u +%Y%m%dT%H%M%SZ); mkdir -m 700 "$D"
+    sudo -u ella python3 -I -B - scan < inventory.py > "$D/inventory.json"
+    python3 -I -B inventory.py summarize "$D/inventory.json" > "$D/summary.json"
 """
 from __future__ import annotations
 
@@ -32,12 +34,13 @@ VERSION = "0.1.0"
 BASE = "/home/ella"                 # fixed; there is no option to point this elsewhere
 TARGETS = ("memory", "diary")        # the only directories inspected
 CHUNK = 1 << 20
+MAX_DEPTH = 32                       # deeper directories are reported, not descended
 EXT_BUCKETS = (".md", ".jsonl", ".json", ".txt", ".log", ".db", ".sqlite", ".sqlite3", ".yaml", ".yml", ".csv", ".gpg")
 SIZE_BUCKETS = ((0, "0"), (1024, "<1KiB"), (64 * 1024, "<64KiB"), (1024 * 1024, "<1MiB"),
                 (16 * 1024 * 1024, "<16MiB"))
 
 O_DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
-O_FILE = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
+O_FILE = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | getattr(os, "O_CLOEXEC", 0)
 
 
 class OutputInsideTarget(Exception):
@@ -65,7 +68,20 @@ def _hash_fd(fd: int):
     return "sha256:" + h.hexdigest(), n
 
 
-def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: int):
+def _safe_name(name: str) -> tuple[str, bool]:
+    """Names are str with surrogate escapes for undecodable bytes. Keep JSON valid and mark such names."""
+    try:
+        name.encode("utf-8")
+        return name, False
+    except UnicodeEncodeError:
+        return os.fsencode(name).decode("utf-8", "backslashreplace"), True
+
+
+def _same(st_a, st_b) -> bool:
+    return (st_a.st_dev, st_a.st_ino) == (st_b.st_dev, st_b.st_ino)
+
+
+def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: int, dev: int):
     try:
         names = sorted(os.listdir(dfd))
     except OSError as exc:
@@ -73,7 +89,8 @@ def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: 
                         "error": type(exc).__name__})
         return
     for name in names:
-        child = f"{rel}/{name}" if rel else name
+        shown, odd = _safe_name(name)
+        child = f"{rel}/{shown}" if rel else shown
         try:
             st = os.stat(name, dir_fd=dfd, follow_symlinks=False)
         except OSError as exc:
@@ -84,11 +101,19 @@ def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: 
             raise OutputInsideTarget(f"{target}/{child}")
         kind = _kind(st.st_mode)
         row = {"target": target, "rel": child, "type": kind, "depth": depth + 1}
+        if odd:
+            row["name_not_utf8"] = True
         if kind == "symlink":
             row["status"] = "not_followed"          # the link target is never read or resolved
         elif kind == "special":
             row["status"] = "not_opened"            # fifo, socket or device: never opened
+        elif st.st_dev != dev:
+            row["status"] = "other_filesystem_not_entered"   # mount point or bind-mounted file
         elif kind == "dir":
+            if depth + 1 >= MAX_DEPTH:
+                row["status"] = "depth_limit_not_descended"
+                entries.append(row)
+                continue
             try:
                 cfd = os.open(name, O_DIR, dir_fd=dfd)
             except OSError as exc:
@@ -96,9 +121,13 @@ def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: 
                 entries.append(row)
                 continue
             try:
+                if not _same(os.fstat(cfd), st):
+                    row["status"] = "replaced_during_scan"
+                    entries.append(row)
+                    continue
                 row["status"] = "ok"
                 entries.append(row)
-                _scan_dir(cfd, child, target, out_ident, entries, depth + 1)
+                _scan_dir(cfd, child, target, out_ident, entries, depth + 1, dev)
             finally:
                 os.close(cfd)
             continue
@@ -111,13 +140,14 @@ def _scan_dir(dfd: int, rel: str, target: str, out_ident, entries: list, depth: 
                 continue
             try:
                 before = os.fstat(fd)
-                if not stat.S_ISREG(before.st_mode) or (before.st_dev, before.st_ino) != (st.st_dev, st.st_ino):
+                if not stat.S_ISREG(before.st_mode) or not _same(before, st):
                     row.update(status="replaced_during_scan")
                 else:
                     digest, n = _hash_fd(fd)
                     after = os.fstat(fd)
                     changed = (n != before.st_size or after.st_size != before.st_size
-                               or after.st_mtime_ns != before.st_mtime_ns)
+                               or after.st_mtime_ns != before.st_mtime_ns
+                               or after.st_ctime_ns != before.st_ctime_ns)
                     row.update(status="changed_during_read" if changed else "ok", size=n, sha256=digest,
                                nlink=before.st_nlink)
             except OSError as exc:
@@ -159,6 +189,11 @@ def scan(base: str = BASE, out_ident=None) -> dict:
         report["base_status"] = f"not_accessible:{type(exc).__name__}"
         report["targets"] = [{"target": t, "status": "not_accessible_parent"} for t in TARGETS]
         return report
+    if not _same(os.fstat(bfd), bst):
+        os.close(bfd)
+        report["base_status"] = "replaced_during_scan"
+        report["targets"] = [{"target": t, "status": "parent_replaced_during_scan"} for t in TARGETS]
+        return report
     report["base_status"] = "ok"
     try:
         for t in TARGETS:
@@ -184,10 +219,14 @@ def scan(base: str = BASE, out_ident=None) -> dict:
                     row.update(status="not_accessible", error=type(exc).__name__)
                 else:
                     try:
+                        if not _same(os.fstat(tfd), st):
+                            row["status"] = "replaced_during_scan"
+                            report["targets"].append(row)
+                            continue
                         row.update(status="present", mode=oct(stat.S_IMODE(st.st_mode)),
                                    owner_uid=st.st_uid)
                         entries = []
-                        _scan_dir(tfd, "", t, out_ident, entries, 0)
+                        _scan_dir(tfd, "", t, out_ident, entries, 0, st.st_dev)
                         report["entries"].extend(entries)
                     finally:
                         os.close(tfd)
@@ -251,6 +290,27 @@ def summarize(inv: dict, inv_bytes: bytes) -> dict:
     return out
 
 
+def compare(a: dict, b: dict) -> dict:
+    """Two private inventories -> counts only. Use it to detect files that changed between two passes, which
+    timestamp checks can miss (same-size rewrites within one filesystem timestamp tick)."""
+    def files(inv):
+        return {(e["target"], e["rel"]): (e.get("size"), e.get("sha256"), e.get("status"))
+                for e in inv.get("entries", []) if e["type"] == "file"}
+    fa, fb = files(a), files(b)
+    changed = sum(1 for k in fa.keys() & fb.keys() if fa[k] != fb[k])
+    other = lambda inv: sorted((e["target"], e["rel"], e["type"], e.get("status"))
+                               for e in inv.get("entries", []) if e["type"] != "file")
+    out = {"tool": "ella-memory-inventory-compare", "version": VERSION,
+           "kind": "SANITIZED — counts only",
+           "files_changed": changed, "files_added": len(fb.keys() - fa.keys()),
+           "files_removed": len(fa.keys() - fb.keys()),
+           "non_file_entries_differ": other(a) != other(b),
+           "targets_differ": a.get("targets") != b.get("targets")}
+    out["identical"] = not (changed or out["files_added"] or out["files_removed"]
+                            or out["non_file_entries_differ"] or out["targets_differ"])
+    return out
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:1] == ["scan"] and len(argv) == 1:
@@ -270,6 +330,13 @@ def main(argv=None) -> int:
             data = fh.read()
         sys.stdout.write(json.dumps(summarize(json.loads(data.decode("utf-8")), data),
                                     ensure_ascii=False, indent=1, sort_keys=True) + "\n")
+        return 0
+    if argv[:1] == ["compare"] and len(argv) == 3:
+        docs = []
+        for path in argv[1:]:
+            with open(path, "rb") as fh:
+                docs.append(json.loads(fh.read().decode("utf-8")))
+        sys.stdout.write(json.dumps(compare(*docs), indent=1, sort_keys=True) + "\n")
         return 0
     print(__doc__, file=sys.stderr)
     return 2

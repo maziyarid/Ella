@@ -2,14 +2,21 @@
 
 Updated 2026-11-03 from the review dispositions. Settled policy is not reopened here.
 
+## Decided for the current work period
+
+| ID | Decision | Effect now |
+|---|---|---|
+| D1 | `maziyarid/Ella` stays **temporarily public** for the current work period, because the agent needs access. It returns to private when that work is finished **and** Maziyar approves the change. (Decided by Maziyar, 2026-11-03.) | Not an open question for this lane. Sensitive data stays off GitHub regardless of visibility: only synthetic material, no inventories, no real filenames, no keys, no fingerprints. The lane never changes visibility itself. |
+
+Making the repository private later does not take back copies already made (forks, clones, caches). Auditing exposed content
+and git history is a separate task; this lane has not done it.
+
 ## Open — needs Maziyar
 
-| ID | Decision | Recommendation | Until decided |
+| ID | Decision | Status | Until decided |
 |---|---|---|---|
-| D1 | Visibility of `maziyarid/Ella`. `ella-core/README.md` says "Private repo; do not make public", but GitHub reports the repository as PUBLIC. | Make it private, because its own README requires that. Visibility does not change without Maziyar's approval. | Publish only synthetic material. Never point live memory or backups at this repository. |
-
-Making the repository private does not take back copies that were already made (forks, clones, caches). Auditing
-exposed content and git history is a separate task, and this lane has not done it.
+| D6 | Which OpenPGP key (or sign-only subkey) is the **trusted signer** for owner attestations, and where its fingerprint is pinned. | **Not decided.** `ella-backup.sh` refers to an existing key through `GPG_RECIPIENT` in `/home/ella/.ella-backup-env`. That is only an existing key reference: its suitability for signing and its authorization as the owner-approval key have **not been established**, and it is not a default. | The verifier has no trusted fingerprint, so it refuses every register. No real record gets owner authority. |
+| D7 | Running the local inventory on the PC (`LIVE_INVENTORY_PROCEDURE.md`). | Waits for Maziyar. The lane does not run it, does not repair SSH and does not collect real filenames. | Live layout stays unobserved. |
 
 ## Lane directions — recorded, not blocking
 

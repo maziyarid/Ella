@@ -7,6 +7,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -246,6 +247,146 @@ class InventoryTests(unittest.TestCase):
         self.assertNotIn(MARKER, r.stderr + r2.stdout)
         self.assertNotIn(SECRET_NAME, r2.stdout)
         self.assertEqual(json.loads(r2.stdout)["private_inventory_sha256"], sha(priv.read_bytes()))
+
+    def test_non_utf8_name_is_marked_and_json_stays_valid(self):
+        raw = os.path.join(os.fsencode(self.t.base / "diary"), b"inv-\xff\xfe.jsonl")
+        with open(raw, "wb") as fh:
+            fh.write(MARKER.encode())
+        inv = self.t.scan()
+        odd = [e for e in inv["entries"] if e.get("name_not_utf8")]
+        self.assertEqual(len(odd), 1)
+        text = json.dumps(inv, ensure_ascii=False)
+        text.encode("utf-8")  # must not raise
+        self.assertNotIn(MARKER, text)
+        buf = io.StringIO()
+        with mock.patch.object(inventory, "BASE", str(self.t.base)), mock.patch.object(sys, "stdout", buf), \
+                redirect_stderr(io.StringIO()):
+            self.assertEqual(inventory.main(["scan"]), 0)
+        json.loads(buf.getvalue())
+
+    def test_depth_limit_reported_not_descended(self):
+        d = self.t.base / "memory"
+        for i in range(inventory.MAX_DEPTH + 3):
+            d = d / f"d{i}"
+        d.mkdir(parents=True)
+        (d / "deep.txt").write_bytes(MARKER.encode())
+        inv = self.t.scan()
+        self.assertIn("depth_limit_not_descended", [e["status"] for e in inv["entries"]])
+        self.assertFalse(any(e["rel"].endswith("deep.txt") for e in inv["entries"]))
+        self.assertLessEqual(max(e["depth"] for e in inv["entries"]), inventory.MAX_DEPTH)
+
+    def test_file_swapped_for_fifo_between_stat_and_open(self):
+        target = self.t.base / "memory" / "MEMORY.md"
+        real_open = inventory.os.open
+
+        def swapping_open(path, flags, *a, **k):
+            if path == "MEMORY.md" and not flags & os.O_DIRECTORY:
+                target.unlink()
+                os.mkfifo(target)
+            return real_open(path, flags, *a, **k)
+        with mock.patch.object(inventory.os, "open", swapping_open):
+            rows = by_rel(self.t.scan())   # O_NONBLOCK: opening the FIFO does not hang
+        self.assertEqual(rows[("memory", "MEMORY.md")]["status"], "replaced_during_scan")
+        self.assertNotIn("sha256", rows[("memory", "MEMORY.md")])
+
+    def test_file_swapped_for_symlink_between_stat_and_open(self):
+        target = self.t.base / "memory" / "MEMORY.md"
+        real_open = inventory.os.open
+
+        def swapping_open(path, flags, *a, **k):
+            if path == "MEMORY.md" and not flags & os.O_DIRECTORY:
+                target.unlink()
+                target.symlink_to(self.t.root / "outside.txt")
+            return real_open(path, flags, *a, **k)
+        with mock.patch.object(inventory.os, "open", swapping_open):
+            rows = by_rel(self.t.scan())
+        self.assertEqual(rows[("memory", "MEMORY.md")]["status"], "not_readable")   # ELOOP from O_NOFOLLOW
+        self.assertNotIn("sha256", rows[("memory", "MEMORY.md")])
+
+    def test_directory_swapped_between_stat_and_open(self):
+        sub = self.t.base / "memory" / "notebook"
+        real_open = inventory.os.open
+
+        def swapping_open(path, flags, *a, **k):
+            if path == "notebook" and flags & os.O_DIRECTORY:
+                sub.rename(self.t.base / "memory" / "moved")
+                sub.mkdir()
+            return real_open(path, flags, *a, **k)
+        with mock.patch.object(inventory.os, "open", swapping_open):
+            rows = by_rel(self.t.scan())
+        self.assertEqual(rows[("memory", "notebook")]["status"], "replaced_during_scan")
+
+    def test_target_swapped_for_symlink_between_stat_and_open(self):
+        real_open = inventory.os.open
+        diary = self.t.base / "diary"
+
+        def swapping_open(path, flags, *a, **k):
+            if path == "diary":
+                diary.rename(self.t.root / "old-diary")
+                diary.symlink_to(self.t.root / "old-diary")
+            return real_open(path, flags, *a, **k)
+        with mock.patch.object(inventory.os, "open", swapping_open):
+            inv = self.t.scan()
+        self.assertEqual({x["target"]: x["status"] for x in inv["targets"]}["diary"], "not_accessible")
+        self.assertFalse(any(e["target"] == "diary" for e in inv["entries"]))
+
+    def test_metadata_change_during_read_detected(self):
+        target = self.t.base / "memory" / "MEMORY.md"
+        real = inventory._hash_fd
+
+        def chmod_then_read(fd):
+            time.sleep(0.03)               # cross the filesystem timestamp tick (4 ms on the test ext4)
+            os.chmod(target, 0o640)        # ctime changes; size and mtime do not
+            return real(fd)
+        with mock.patch.object(inventory, "_hash_fd", chmod_then_read):
+            rows = by_rel(self.t.scan())
+        self.assertEqual(rows[("memory", "MEMORY.md")]["status"], "changed_during_read")
+
+    def test_summary_vocabulary_is_closed(self):
+        os.mkfifo(self.t.base / "memory" / SECRET_NAME)
+        (self.t.base / "memory" / f"{SECRET_NAME}.weird-ext").write_bytes(b"x")
+        inv = self.t.scan()
+        s = inventory.summarize(inv, json.dumps(inv).encode())
+        flat = json.dumps(s)
+        self.assertNotIn(SECRET_NAME, flat)
+        self.assertNotIn("weird", flat)
+        allowed = set(inventory.EXT_BUCKETS) | {"(none)", "(other)"}
+        for t in s["targets"].values():
+            self.assertLessEqual(set(t["extensions"]), allowed)
+
+    def test_compare_two_scans_counts_only(self):
+        a = self.t.scan()
+        (self.t.base / "diary" / "2026-01-01.jsonl").write_bytes(b"same-size?")
+        (self.t.base / "memory" / f"{SECRET_NAME}-new.md").write_bytes(b"n")
+        (self.t.base / "memory" / "MEMORY.md").unlink()
+        b = self.t.scan()
+        c = inventory.compare(a, b)
+        self.assertEqual(c["files_changed"], 1)
+        self.assertEqual(c["files_added"], 1)
+        self.assertEqual(c["files_removed"], 1)
+        self.assertFalse(c["identical"])
+        self.assertNotIn(SECRET_NAME, json.dumps(c))
+        self.assertTrue(inventory.compare(b, self.t.scan())["identical"])
+
+    def test_other_filesystem_is_not_entered(self):
+        real_stat = inventory.os.stat
+
+        def fake_stat(path, *a, **k):
+            st = real_stat(path, *a, **k)
+            if path == "notebook":
+                vals = list(st)
+                vals[2] = st.st_dev + 1          # st_dev
+                return os.stat_result(vals)
+            return st
+        with mock.patch.object(inventory.os, "stat", fake_stat):
+            rows = by_rel(self.t.scan())
+        self.assertEqual(rows[("memory", "notebook")]["status"], "other_filesystem_not_entered")
+        self.assertFalse(any(r[1].startswith("notebook/") for r in rows))
+
+    def test_file_open_flags(self):
+        for flag in (os.O_NOFOLLOW, os.O_NONBLOCK, os.O_NOCTTY):
+            self.assertTrue(inventory.O_FILE & flag)
+        self.assertFalse(inventory.O_FILE & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND))
 
     def test_default_base_is_fixed(self):
         self.assertEqual(inventory.BASE, "/home/ella")

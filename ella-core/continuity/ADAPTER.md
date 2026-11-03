@@ -1,7 +1,7 @@
 # Read-only continuity adapter v0.1 — runtime boundary
 
-Inspected 2026-11-03 at Ella `8269aa1`, Ella-Brain `cea47fa`, plus Ella-Brain `hardening/combined-no-overwrite-lock-timeout`
-at `d01d1f1` (Ella-Brain PR #1, listed only). Nothing was run on the AdaOS PC: SSH to it is recorded as unreachable
+Inspected 2026-11-03 at Ella `8269aa1` and Ella-Brain `main` `9132753` (current baseline; Ella-Brain interfaces are byte-identical to
+the historical baseline `cea47fa`, see `INVENTORY.md`). Nothing was run on the AdaOS PC: SSH to it is recorded as unreachable
 (`setup-adaos-native.sh`, 2026-10-24), so everything about the live machine below comes from source and recorded run notes.
 
 ## The everyday runtime: intended, recorded, unknown
@@ -54,7 +54,7 @@ Synthetic copy (`synthetic/home-ella/`). Everything inside it is a **proposal** 
 | Read | Owner today | Owner with this adapter |
 |---|---|---|
 | `memory/`, `diary/` bytes | By source, only `ella-backup.sh` (tar, as `ella`). Its units were not installed in the recorded run; current state unknown | `adapter.py`, as a second reader, read-only. It would have to run as `ella` if `/home/ella` is mode 700 as intended. |
-| Authority / decisions | No one. `00_GOVERNANCE/ELLA_DECISION_LOG.md` is 0 bytes; decisions live in DotCollab | A separate attestation file **outside** the memory root, bound to each record's `record_sha256`. A file inside the root is refused. |
+| Authority / decisions | No one. `00_GOVERNANCE/ELLA_DECISION_LOG.md` is 0 bytes; decisions live in DotCollab | Owner levels: only a signed register verified by `attest_verify.py` against a configured fingerprint, bound to each record's `record_sha256`. Lower levels: the unsigned attestation file, which is a boundary and never owner evidence. Both must be outside the memory root. |
 | P0 profiles | No one; there are no files | `adapter.py` hashes them against the manifest; a mismatch blocks boot |
 | Context selection | No one | `checker.assemble`, called by the adapter (one selection authority, no parallel loader) |
 | Model weights, chat | By source intent, upstream `ollama.service` (user `ollama`); current state unknown | Unchanged. The adapter never talks to it. |
@@ -83,6 +83,7 @@ nothing about compatibility with the real `/home/ella`, whose contents and forma
 | A changed byte leads to `changed_unreconciled` and the source is held back | `AlteredBytes.test_altered_source_is_held_back` |
 | An accepted revision does not rescue an altered record (attestation is bound to the record hash) | `AlteredBytes.test_accepted_revision_does_not_rescue…` |
 | A forged `owner_approved` claim, a self-attestation field, a wrong-hash attestation, or an attestation file inside the memory root gains no authority | `ForgedAuthority.*` |
+| Owner levels come only from a register verified against a configured fingerprint; the unsigned file, a refused or hand-built result, changed bytes or a withdrawn approval grant none; trust inputs inside the root are refused | `OwnerRegister.*` |
 | A record cannot choose its own source or store | `ForgedAuthority.test_record_cannot_choose_its_source_or_store` |
 | Missing source, attestation file or profile: reported as a gap, block or absence, with no content invented | `MissingAndUnauthorized.*` |
 | Paths outside the authorized roots, `..`, absolute paths, `models/`, `backups/` and symlinks out of the copy are not read | `MissingAndUnauthorized.test_unauthorized_refs…`, `…symlink…` |
@@ -102,7 +103,7 @@ Building the adapter also exposed a checker gap, which is now fixed. A slot whos
 cd ella-core/continuity
 python3 -B adapter.py --root synthetic/home-ella --manifest synthetic/manifest.json \
   --attestations synthetic/attestations.json --topics tea date --now 2026-11-03T12:00:00Z
-python3 -B -m unittest -v test_checker test_adapter test_inventory   # expect: Ran 87 tests ... OK
+python3 -B -m unittest -v test_checker test_adapter test_inventory test_attest_verify   # expect: Ran 143 tests ... OK
 ```
 
 ## Next concrete blocker
@@ -115,7 +116,9 @@ who writes them.
    locally. The private inventory stays on the PC; only the sanitized summary is shared, after his review.
 2. **Format.** For each file family, a locally prepared description or a synthetic example (procedure §4). Real contents are
    not requested.
-3. **Owner approval.** The signed register in `ATTESTATION.md`, together with a verifier that fails closed. The adapter's
-   current attestation file is a boundary only (`owner_approval_evidence: none`).
+3. **Owner approval.** The verifier exists and fails closed, but it is tested only with disposable keys. What is missing is
+   Maziyar's choice of signing key and pinned fingerprint (D6), and a protected location for the rollback anchor
+   (`ATTESTATION.md` §6). Until then no trusted signer is configured, every register is refused, and no record gets owner
+   authority.
 
-Until 2 and 3 exist, every real record stays unapplied.
+Until 2 and 3 exist, every real record stays unapplied, and `/home/ella` stays refused.

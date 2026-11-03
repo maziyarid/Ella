@@ -32,6 +32,7 @@ sys.dont_write_bytecode = True
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 import checker  # noqa: E402  (extend the existing checker; no second authority)
+import attest_verify  # noqa: E402  (owner levels only from a verified register)
 
 ADAPTER_VERSION = "0.1.0"
 LIVE_ROOTS = {Path("/home/ella")}
@@ -180,7 +181,12 @@ def load_attestations(root: Path, path: Path | None, layout: dict):
 # ----------------------------------------------------------------- adapter
 
 def adapt(root: Path, manifest: dict, attestation_path: Path | None, topics, now: str,
-          boot_id: str | None, hostname: str | None, include_input: bool = False) -> dict:
+          boot_id: str | None, hostname: str | None, include_input: bool = False,
+          owner_register: dict | None = None) -> dict:
+    """owner_register is the result of attest_verify.verify_register, computed by the caller.
+
+    The adapter itself runs no subprocess. Owner levels (owner_approved, owner_stated) are granted only through
+    attest_verify.owner_authority on a verified result; the unsigned attestation file can never grant them."""
     root = Path(root)
     if root.resolve() in LIVE_ROOTS or any(root.resolve() == p.resolve() for p in LIVE_ROOTS if p.exists()):
         raise Refused("live root refused: live memory use is not approved")
@@ -342,17 +348,27 @@ def adapt(root: Path, manifest: dict, attestation_path: Path | None, topics, now
             for ln in links:
                 finding("symlink_not_followed", file=ln.relative_to(root).as_posix())
 
-    # Authority: derived only from the attestation file, bound to the record bytes.
+    # Authority. Owner levels: only from a verified, signed register, bound to the exact record bytes.
+    # Lower levels: from the unsigned attestation file (a boundary; no trusted issuer exists for them yet).
     attest = {}
     for rec in records:
         rid = rec.get("id")
         cands = att_by_record.get(rid, [])
+        owner_cands = [a for a in cands if a["authority"] in attest_verify.OWNER_LEVELS]
+        if owner_cands:
+            finding("unsigned_owner_attestation_ignored", record_id=rid)
+        cands = [a for a in cands if a["authority"] not in attest_verify.OWNER_LEVELS]
         good = [a for a in cands if a["record_sha256"] == rec["record_sha256"]]
         if cands and not good:
             finding("attestation_record_hash_mismatch", record_id=rid)
         if good:
             attest[rid] = min((a["authority"] for a in good),
                               key=lambda x: checker.AUTHORITY_RANK.get(x, -9))
+        level, why = attest_verify.owner_authority(owner_register, rec.get("source_id"), rid, rec["record_sha256"])
+        if level is not None:
+            attest[rid] = level
+        elif why == "record_bytes_differ_from_approved_bytes":
+            finding("owner_approval_hash_mismatch", record_id=rid)
     rev = {sid: h for sid, h in accepted.items()}
 
     fresh = {}
@@ -399,6 +415,7 @@ def adapt(root: Path, manifest: dict, attestation_path: Path | None, topics, now
         "profiles": {k: {kk: vv for kk, vv in v.items()} for k, v in observed_profiles.items()},
         "legacy_inputs": legacy_rows,
         "attestation_source": att_info,
+        "owner_register": _register_summary(owner_register),
         "findings": findings,
         "checker_input_sha256": sha(json.dumps(checker_input, sort_keys=True, ensure_ascii=False).encode("utf-8")),
         "report": report,
@@ -408,6 +425,26 @@ def adapt(root: Path, manifest: dict, attestation_path: Path | None, topics, now
     if include_input:
         out["checker_input"] = checker_input
     return out
+
+
+def _register_summary(result):
+    if not isinstance(result, dict):
+        return {"status": "absent", "owner_approval_evidence": "none: no signed register supplied"}
+    keep = ("status", "reason", "entries", "register_sha256", "signer_primary_fpr", "owner_approval_evidence",
+            "rollback_check", "notes")
+    out = {k: result[k] for k in keep if k in result}
+    out["approvals_granted"] = len(result.get("approvals", {})) if result.get("status") == "verified" else 0
+    return out
+
+
+def _read_outside(root: Path, p: str | None):
+    """Read a trust input once; refuse it if it lies inside the memory root."""
+    if p is None:
+        return None
+    rp = Path(p).resolve()
+    if rp.is_relative_to(Path(root).resolve()):
+        raise Refused(f"trust input inside the memory root refused: {Path(p).name}")
+    return read_bytes(rp) if rp.is_file() else None
 
 
 def current_boot_id():
@@ -423,6 +460,11 @@ def main(argv=None) -> int:
     ap.add_argument("--root", required=True)
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--attestations")
+    ap.add_argument("--register", help="signed owner register (JSONL), outside the root")
+    ap.add_argument("--register-sig", help="detached OpenPGP signature over --register")
+    ap.add_argument("--trusted-key", help="public key file of the trusted signer")
+    ap.add_argument("--trusted-fpr", help="pinned fingerprint of the trusted signer; required for owner authority")
+    ap.add_argument("--anchor", help="rollback anchor JSON {latest_seq, prefix_sha256}, outside the root")
     ap.add_argument("--topics", nargs="*", default=[])
     ap.add_argument("--now", default=None, help="ISO time; defaults to the current UTC time")
     ap.add_argument("--emit-checker-input", action="store_true",
@@ -431,9 +473,20 @@ def main(argv=None) -> int:
     now = args.now or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
         manifest = json.loads(read_bytes(Path(args.manifest)).decode("utf-8"))
+        register = None
+        if any((args.register, args.register_sig, args.trusted_key, args.trusted_fpr, args.anchor)):
+            anchor_bytes = _read_outside(Path(args.root), args.anchor)
+            try:
+                anchor = json.loads(anchor_bytes.decode("utf-8")) if anchor_bytes is not None else None
+            except ValueError:
+                anchor = "unparseable"
+            register = attest_verify.verify_register(
+                _read_outside(Path(args.root), args.register), _read_outside(Path(args.root), args.register_sig),
+                _read_outside(Path(args.root), args.trusted_key), args.trusted_fpr, anchor,
+                datetime.strptime(now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc))
         out = adapt(Path(args.root), manifest, Path(args.attestations) if args.attestations else None,
                     args.topics, now, current_boot_id(), socket.gethostname(),
-                    include_input=args.emit_checker_input)
+                    include_input=args.emit_checker_input, owner_register=register)
     except Refused as exc:
         print(json.dumps({"refused": str(exc)}), file=sys.stderr)
         return 2
