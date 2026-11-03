@@ -31,7 +31,7 @@
   ],
   "context_budget_tokens": 2500,
   "unresolved_questions": [
-    {"id": "uq:episodic-vs-memory-log", "question": "Is diary/ the single episodic stream, or does memory/ hold a second log?", "refs": ["DECISIONS.md#D2"]}
+    {"id": "uq:legacy-event-log-mapping", "question": "diary/ is the Episodic stream (D2). How do legacy event logs map into it? Until a mapping is accepted they are read-only inputs.", "refs": ["DECISIONS.md#D2"]}
   ],
   "supersession": {
     "authority_order": ["owner_approved", "owner_stated", "ella_observed", "ella_inferred", "third_party_reported"],
