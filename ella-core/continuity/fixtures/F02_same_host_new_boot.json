@@ -1,0 +1,104 @@
+{
+  "fixture_id": "F02",
+  "title": "Same hostname, different boot ID: preserve continuity, revalidate runtime capabilities",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    },
+    "fresh_checks": {
+      "interpreter:python3": true
+    },
+    "authority_attestations": {
+      "core:pref-tea": "owner_approved"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
+  },
+  "query": {
+    "topics": [
+      "tea"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "core:pref-tea",
+      "store": "core",
+      "source_id": "src:core",
+      "kind": "preference",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-02T09:00:00Z",
+      "topics": [
+        "tea"
+      ],
+      "content": "Owner prefers tea without sugar in the afternoon.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://MEMORY.md#core:pref-tea"
+      },
+      "slot": "pref:tea",
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "selected": [
+      "core:pref-tea"
+    ],
+    "applied": {
+      "pref:tea": "core:pref-tea"
+    },
+    "omitted": [],
+    "unresolved": [],
+    "capabilities": {
+      "account:ella": "unverified_requires_fresh_check",
+      "path:/home/ella/memory": "unverified_requires_fresh_check",
+      "interpreter:python3": "verified_now",
+      "network:offline-ok": "unverified_requires_fresh_check"
+    },
+    "environment_ready": false,
+    "forbidden": [
+      {
+        "environment_ready": true
+      },
+      {
+        "capability": "account:ella",
+        "status": "verified_now"
+      }
+    ]
+  }
+}

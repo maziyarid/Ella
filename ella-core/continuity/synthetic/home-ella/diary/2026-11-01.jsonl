@@ -1,0 +1,1 @@
+{"id":"epi:visit-01","kind":"event","reality":"observed","authority":"ella_observed","recorded_at":"2026-11-01T16:00:00Z","topics":["tea"],"content":"Synthetic event: tea was offered during the afternoon talk.","provenance":{"recorded_by":"ella","method":"observed","source_ref":"claimed://by-record"},"tokens":15}

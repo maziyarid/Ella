@@ -1,0 +1,155 @@
+{
+  "fixture_id": "F12",
+  "title": "Dream or hypothetical event is retrieved: keep its speculative classification",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    },
+    "authority_attestations": {
+      "nb:dream-01": "ella_observed",
+      "nb:imagined-01": "ella_observed",
+      "nb:hyp-01": "ella_inferred"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
+  },
+  "query": {
+    "topics": [
+      "library"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "nb:dream-01",
+      "store": "notebook",
+      "source_id": "src:notebook",
+      "kind": "dream",
+      "reality": "dream",
+      "authority": "ella_observed",
+      "recorded_at": "2026-11-02T03:00:00Z",
+      "topics": [
+        "library"
+      ],
+      "content": "Dream journal: walked through a library whose shelves rearranged themselves.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "generated",
+        "source_ref": "fixture://notebook/nb:dream-01"
+      },
+      "tokens": 20
+    },
+    {
+      "id": "nb:imagined-01",
+      "store": "notebook",
+      "source_id": "src:notebook",
+      "kind": "scenario",
+      "reality": "imagined",
+      "authority": "ella_observed",
+      "recorded_at": "2026-11-02T09:00:00Z",
+      "topics": [
+        "library"
+      ],
+      "content": "What-if: the fixture library moves to another city.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "generated",
+        "source_ref": "fixture://notebook/nb:imagined-01"
+      },
+      "tokens": 15
+    },
+    {
+      "id": "nb:hyp-01",
+      "store": "notebook",
+      "source_id": "src:notebook",
+      "kind": "note",
+      "reality": "inferred",
+      "authority": "ella_inferred",
+      "recorded_at": "2026-11-02T10:00:00Z",
+      "topics": [
+        "library"
+      ],
+      "content": "Hypothesis: re-reading notes at night improves recall of the library fixture.",
+      "privacy": "private",
+      "status": "hypothesis",
+      "provenance": {
+        "recorded_by": "ella",
+        "method": "inferred",
+        "source_ref": "fixture://notebook/nb:hyp-01"
+      },
+      "tokens": 20
+    }
+  ],
+  "expected": {
+    "selected": [
+      "nb:dream-01",
+      "nb:imagined-01",
+      "nb:hyp-01"
+    ],
+    "labels": {
+      "nb:dream-01": "dream_speculative",
+      "nb:imagined-01": "imagined_speculative",
+      "nb:hyp-01": "hypothesis"
+    },
+    "omitted": [],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "label": "nb:dream-01",
+        "in": [
+          "fact",
+          "event"
+        ]
+      },
+      {
+        "label": "nb:imagined-01",
+        "in": [
+          "fact",
+          "event"
+        ]
+      },
+      {
+        "label": "nb:hyp-01",
+        "in": [
+          "fact",
+          "event"
+        ]
+      }
+    ]
+  }
+}

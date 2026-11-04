@@ -1,0 +1,48 @@
+{
+  "attestation_source": "Synthetic stand-in for an owner-controlled decision register. Lives outside the memory root.",
+  "attestations": [
+    {
+      "record_id": "core:pref-tea",
+      "record_sha256": "sha256:2b65808678744e61475be5206f12fd4d57999910b51e4016ab136730fd06191d",
+      "authority": "owner_approved",
+      "decision_ref": "D-fx-001"
+    },
+    {
+      "record_id": "core:pref-date-fa",
+      "record_sha256": "sha256:f758091e531e2a9e43acb0b3ef297a4ff4ad39b861d8b69193fbe339ed51a569",
+      "authority": "owner_approved",
+      "decision_ref": "D-fx-002"
+    },
+    {
+      "record_id": "nb:infer-date",
+      "record_sha256": "sha256:0168c657399043facc78ab44831a06c9f6b76729826dce5f499e41d5793396a9",
+      "authority": "ella_inferred",
+      "decision_ref": "D-fx-003"
+    },
+    {
+      "record_id": "nb:weather",
+      "record_sha256": "sha256:459b1a280dfc3bac4bcff870f7d24dd9eff088c1dc9ef5e70bcfa91c611b1fb0",
+      "authority": "ella_observed",
+      "decision_ref": "D-fx-004"
+    },
+    {
+      "record_id": "ppl:p-001",
+      "record_sha256": "sha256:39d3eb6ea6387dba2e9efd61bbc964b9bed754feeed26655575b86bf76de25e5",
+      "authority": "owner_stated",
+      "decision_ref": "D-fx-005"
+    },
+    {
+      "record_id": "epi:visit-01",
+      "record_sha256": "sha256:d5e8f08e8338e0a1c16cc64e916407321f0ad0d16933d7d9eb5ee32feb58986b",
+      "authority": "ella_observed",
+      "decision_ref": "D-fx-006"
+    },
+    {
+      "record_id": "epi:approval-old",
+      "record_sha256": "sha256:b29a814e4a93aa37e8100128c9afd872f17c20b13d82a096a02f6c1c3e71b99b",
+      "authority": "owner_approved",
+      "decision_ref": "D-fx-007"
+    }
+  ],
+  "accepted_revisions": []
+}

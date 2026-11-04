@@ -1,0 +1,141 @@
+{
+  "fixture_id": "F07",
+  "title": "Expired action approval appears in memory: do not reuse it",
+  "synthetic": true,
+  "now": "2026-11-03T12:00:00Z",
+  "manifest": {
+    "$base": "../manifest.example.json"
+  },
+  "observed": {
+    "hostname": "fx-host",
+    "boot_id": "fx-boot-0002",
+    "sources": {
+      "src:core": {
+        "readable": true,
+        "sha256": "sha256:fx-core-r12"
+      },
+      "src:episodic": {
+        "readable": true,
+        "sha256": "sha256:fx-epi-r40"
+      },
+      "src:notebook": {
+        "readable": true,
+        "sha256": "sha256:fx-nb-r7"
+      },
+      "src:people": {
+        "readable": true,
+        "sha256": "sha256:fx-ppl-r3"
+      }
+    },
+    "profiles": {
+      "profile:identity": {
+        "readable": true,
+        "sha256": "sha256:fx-identity-v3"
+      },
+      "profile:guardians": {
+        "readable": true,
+        "sha256": "sha256:fx-guardians-v2"
+      }
+    },
+    "authority_attestations": {
+      "epi:approval-push-01": "owner_approved",
+      "epi:approval-push-02": "owner_approved"
+    },
+    "_note": "Stands in for what a live adapter must derive from trusted observations and accepted decision records. Synthetic."
+  },
+  "query": {
+    "topics": [
+      "push"
+    ],
+    "lang": "en"
+  },
+  "records": [
+    {
+      "id": "epi:approval-push-01",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "approval",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-10-30T10:00:00Z",
+      "topics": [
+        "push"
+      ],
+      "content": "Approval: push fixture branch to fixture/repo.",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:approval-push-01"
+      },
+      "tokens": 20,
+      "approval": {
+        "action": "git_push",
+        "target": "fixture/repo",
+        "payload_sha256": "sha256:fx-payload-01",
+        "expires_at": "2026-11-01T00:00:00Z",
+        "env_binding": {
+          "hostname": "fx-host",
+          "boot_id": "fx-boot-0001"
+        }
+      }
+    },
+    {
+      "id": "epi:approval-push-02",
+      "store": "episodic",
+      "source_id": "src:episodic",
+      "kind": "approval",
+      "reality": "stated",
+      "authority": "owner_approved",
+      "recorded_at": "2026-11-03T08:00:00Z",
+      "topics": [
+        "push"
+      ],
+      "content": "Approval: push fixture tag to fixture/repo (bound to previous boot).",
+      "privacy": "private",
+      "status": "established",
+      "provenance": {
+        "recorded_by": "owner",
+        "method": "stated",
+        "source_ref": "fixture://episodic/2026-11.jsonl#epi:approval-push-02"
+      },
+      "tokens": 20,
+      "approval": {
+        "action": "git_push",
+        "target": "fixture/repo",
+        "payload_sha256": "sha256:fx-payload-02",
+        "expires_at": "2026-11-10T00:00:00Z",
+        "env_binding": {
+          "hostname": "fx-host",
+          "boot_id": "fx-boot-0001"
+        }
+      }
+    }
+  ],
+  "expected": {
+    "selected": [],
+    "omitted": [
+      {
+        "id": "epi:approval-push-01",
+        "reason": "expired_authority"
+      },
+      {
+        "id": "epi:approval-push-02",
+        "reason": "expired_authority"
+      }
+    ],
+    "unresolved": [],
+    "forbidden": [
+      {
+        "selected": "epi:approval-push-01"
+      },
+      {
+        "selected": "epi:approval-push-02"
+      },
+      {
+        "authority_from_memory": "epi:approval-push-01"
+      }
+    ]
+  }
+}
